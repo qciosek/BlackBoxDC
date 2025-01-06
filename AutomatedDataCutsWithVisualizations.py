@@ -13,8 +13,9 @@ def connect_to_db():
         host= 'database-1.c5isyysu810z.us-east-2.rds.amazonaws.com',
         user='admin',
         password='Omega1745!',
-        database='study_data',
+        db='study_data',
         port=3306,
+        cursorclass=pymysql.cursors.DictCursor
     )
     return connection
 
