@@ -206,7 +206,7 @@ def main():
                     ax.text(i + bar_width / 2, v + 1, f"{v}%", ha='center', fontsize=9)
 
                 ax.set_ylabel('Percentage')
-                ax.set_title('Percentage of Respondents Who Said Yes')
+                ax.set_title('Percentage of Respondents Who Said Yes to Selected Answers')
                 plt.xticks([pos for pos in x_pos], filtered_df['answer_text'], rotation=45, ha='right')
 
             else:  # Horizontal bar chart
