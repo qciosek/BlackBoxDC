@@ -237,7 +237,7 @@ def main():
                     ax.text(v + 1, i + bar_width / 2, f"{v}%", va='center', fontsize=9)
 
                 ax.set_xlabel('Percentage')
-                ax.set_title('Percentage of Respondents Who Said Yes')
+                ax.set_title('Percentage of Respondents Who Said Yes to Selected Answers')
                 plt.yticks([pos for pos in x_pos], filtered_df['answer_text'])
 
             ax.set_ylim(0, 100) if orientation == "Vertical" else ax.set_xlim(0, 100)
