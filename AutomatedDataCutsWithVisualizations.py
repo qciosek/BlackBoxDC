@@ -164,88 +164,98 @@ def main():
         bar_color_yes = st.color_picker("Pick a Bar Color for Avg Yes Percentage", "#ff7f0e")
         orientation = st.radio("Choose Chart Orientation", ["Vertical", "Horizontal"])
 
-        # Display bar charts for selected answers
-        if selected_answers:
-            # Filter for selected answers
-            filtered_df = df[df['answer_text'].isin(selected_answers)].drop_duplicates(subset=['answer_text'])
+ # Display bar charts for selected answers
+if selected_answers:
+    # Filter for selected answers
+    filtered_df = df[df['answer_text'].isin(selected_answers)].drop_duplicates(subset=['answer_text'])
 
-            # Adjust the bar width depending on the number of bars
-            num_bars = len(filtered_df)
-            bar_width = 0.7 / num_bars  # Divide the available space and leave space between bars
+    # Adjust the bar width depending on the number of bars
+    num_bars = len(filtered_df)
+    bar_width = 0.7 / max(num_bars, 1)  # Avoid division by zero
 
-            fig, ax = plt.subplots(figsize=(10, 6))
+    fig, ax = plt.subplots(figsize=(10, 6))
 
-            # Initialize the x position for the bars
-            x_pos = range(len(filtered_df))
+    # Initialize the x position for the bars
+    x_pos = range(len(filtered_df))
 
-            if orientation == "Vertical":
-                # Plot the cut_percentage bars
-                ax.bar(
-                    [pos - bar_width / 2 for pos in x_pos],  # shift left for cut percentage
-                    filtered_df['cutpercentage_numeric'],
-                    width=bar_width,
-                    label='From Data Cut',
-                    color=bar_color_cut
-                )
+    if orientation == "Vertical":
+        # Plot the cut_percentage bars
+        ax.bar(
+            [pos - bar_width / 2 for pos in x_pos],  # shift left for cut percentage
+            filtered_df['cutpercentage_numeric'],
+            width=bar_width,
+            label='From Data Cut',
+            color=bar_color_cut
+        )
 
-                # Add percentage labels to Cut Percentage bars
-                for i, v in enumerate(filtered_df['cutpercentage_numeric']):
-                    ax.text(i - bar_width / 2, v + 1, f"{v}%", ha='center', fontsize=9)
+        # Add percentage labels to Cut Percentage bars
+        for i, v in enumerate(filtered_df['cutpercentage_numeric']):
+            ax.text(i - bar_width / 2, v + 1, f"{v}%", ha='center', fontsize=9)
 
-                # Plot the avg_yes_percentage bars
-                ax.bar(
-                    [pos + bar_width / 2 for pos in x_pos],  # shift right for avg yes percentage
-                    filtered_df['avg_yes_percentage_numeric'],
-                    width=bar_width,
-                    label='From Total Sample',
-                    color=bar_color_yes
-                )
+        # Plot the avg_yes_percentage bars
+        ax.bar(
+            [pos + bar_width / 2 for pos in x_pos],  # shift right for avg yes percentage
+            filtered_df['avg_yes_percentage_numeric'],
+            width=bar_width,
+            label='From Total Sample',
+            color=bar_color_yes
+        )
 
-                # Add percentage labels to Avg Yes Percentage bars
-                for i, v in enumerate(filtered_df['avg_yes_percentage_numeric']):
-                    ax.text(i + bar_width / 2, v + 1, f"{v}%", ha='center', fontsize=9)
+        # Add percentage labels to Avg Yes Percentage bars
+        for i, v in enumerate(filtered_df['avg_yes_percentage_numeric']):
+            ax.text(i + bar_width / 2, v + 1, f"{v}%", ha='center', fontsize=9)
 
-                ax.set_ylabel('Percentage')
-                ax.set_title('Percentage of Respondents Who Said Yes to Selected Answers')
-                plt.xticks([pos for pos in x_pos], filtered_df['answer_text'], rotation=45, ha='right')
+        ax.set_ylabel('Percentage')
+        ax.set_title('Percentage of Respondents Who Said Yes to Selected Answers')
 
-            else:  # Horizontal bar chart
-                # Plot the cut_percentage bars
-                ax.barh(
-                    [pos - bar_width / 2 for pos in x_pos],  # shift down for cut percentage
-                    filtered_df['cutpercentage_numeric'],
-                    height=bar_width,
-                    label='From Data Cut',
-                    color=bar_color_cut
-                )
+        # Ensure answer_text is displayed, even for a single bar
+        plt.xticks([pos for pos in x_pos], filtered_df['answer_text'], rotation=45, ha='right')
 
-                # Add percentage labels to Cut Percentage bars
-                for i, v in enumerate(filtered_df['cutpercentage_numeric']):
-                    ax.text(v + 1, i - bar_width / 2, f"{v}%", va='center', fontsize=9)
+    else:  # Horizontal bar chart
+        # Plot the cut_percentage bars
+        ax.barh(
+            [pos - bar_width / 2 for pos in x_pos],  # shift down for cut percentage
+            filtered_df['cutpercentage_numeric'],
+            height=bar_width,
+            label='From Data Cut',
+            color=bar_color_cut
+        )
 
-                # Plot the avg_yes_percentage bars
-                ax.barh(
-                    [pos + bar_width / 2 for pos in x_pos],  # shift up for avg yes percentage
-                    filtered_df['avg_yes_percentage_numeric'],
-                    height=bar_width,
-                    label='From Total Sample',
-                    color=bar_color_yes
-                )
+        # Add percentage labels to Cut Percentage bars
+        for i, v in enumerate(filtered_df['cutpercentage_numeric']):
+            ax.text(v + 1, i - bar_width / 2, f"{v}%", va='center', fontsize=9)
 
-                # Add percentage labels to Avg Yes Percentage bars
-                for i, v in enumerate(filtered_df['avg_yes_percentage_numeric']):
-                    ax.text(v + 1, i + bar_width / 2, f"{v}%", va='center', fontsize=9)
+        # Plot the avg_yes_percentage bars
+        ax.barh(
+            [pos + bar_width / 2 for pos in x_pos],  # shift up for avg yes percentage
+            filtered_df['avg_yes_percentage_numeric'],
+            height=bar_width,
+            label='From Total Sample',
+            color=bar_color_yes
+        )
 
-                ax.set_xlabel('Percentage')
-                ax.set_title('Percentage of Respondents Who Said Yes')
-                plt.yticks([pos for pos in x_pos], filtered_df['answer_text'])
+        # Add percentage labels to Avg Yes Percentage bars
+        for i, v in enumerate(filtered_df['avg_yes_percentage_numeric']):
+            ax.text(v + 1, i + bar_width / 2, f"{v}%", va='center', fontsize=9)
 
-            ax.set_ylim(0, 100) if orientation == "Vertical" else ax.set_xlim(0, 100)
-            ax.legend()
-            st.pyplot(fig)
+        ax.set_xlabel('Percentage')
+        ax.set_title('Percentage of Respondents Who Said Yes to Selected Answers')
 
-        else:
-            st.write("No data found for the selected answers.")
+        # Ensure answer_text is displayed, even for a single bar
+        plt.yticks([pos for pos in x_pos], filtered_df['answer_text'])
+
+    # Set appropriate limits for vertical or horizontal orientation
+    if orientation == "Vertical":
+        ax.set_ylim(0, 100)
+    else:
+        ax.set_xlim(0, 100)
+
+    ax.legend()
+    st.pyplot(fig)
+
+else:
+    st.write("No data found for the selected answers.")
+
 
 if __name__ == "__main__":
     main()
