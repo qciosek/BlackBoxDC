@@ -154,20 +154,28 @@ def main():
 
         # Bar chart visualization
         st.subheader("Bar Chart Visualization")
-        selected_answers = st.multiselect(
-            "Select answers to display in the bar chart:",
-            df['answer_text'].unique().tolist(),
-        )
 
-        # User inputs for customization
-        bar_color_cut = st.color_picker("Pick a Bar Color for Data Cut Percentage", "#1f77b4")
-        bar_color_yes = st.color_picker("Pick a Bar Color for Total Sample Percentage", "#ff7f0e")
-        orientation = st.radio("Choose Chart Orientation", ["Vertical", "Horizontal"])
+# Combine answer_text and question_code for display in the dropdown
+df['dropdown_display'] = df['answer_text'] + " (" + df['question_code'] + ")"
 
-        # Display bar charts for selected answers
-        if selected_answers:
-            # Filter for selected answers
-            filtered_df = df[df['answer_text'].isin(selected_answers)].drop_duplicates(subset=['answer_text'])
+selected_answers = st.multiselect(
+    "Select answers to display in the bar chart:",
+    df['dropdown_display'].unique().tolist(),
+)
+
+# User inputs for customization
+bar_color_cut = st.color_picker("Pick a Bar Color for Data Cut Percentage", "#1f77b4")
+bar_color_yes = st.color_picker("Pick a Bar Color for Total Sample Percentage", "#ff7f0e")
+orientation = st.radio("Choose Chart Orientation", ["Vertical", "Horizontal"])
+
+# Display bar charts for selected answers
+if selected_answers:
+    # Map selected dropdown items back to original answer_text
+    selected_answer_texts = df[df['dropdown_display'].isin(selected_answers)]['answer_text'].unique()
+
+    # Filter for selected answers
+    filtered_df = df[df['answer_text'].isin(selected_answer_texts)].drop_duplicates(subset=['answer_text'])
+
 
             # Adjust the bar width depending on the number of bars
             num_bars = len(filtered_df)
