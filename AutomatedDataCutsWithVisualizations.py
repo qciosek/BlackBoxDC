@@ -10,10 +10,11 @@ st.cache_data.clear()
 # Connect to the MySQL database
 def connect_to_db():
     connection = pymysql.connect(
-        host='localhost',
-        user='quincyciosek',
+        host= 'database-1.c5isyysu810z.us-east-2.rds.amazonaws.com',
+        user='admin',
         password='Omega1745!',
-        database='study_data'
+        database='study_data',
+        port=3306,
     )
     return connection
 
