@@ -237,7 +237,7 @@ def main():
                 ax.set_title("Bar Chart Visualization")
                 plt.yticks(x_pos, filtered_df["answer_text"])
 
-            ax.set_ylim(0, 100) if orientation == "Vertical" else ax.set_xlim(0, 100)
+            ax.set_ylim(0, 300) if orientation == "Vertical" else ax.set_xlim(0, 100)
             ax.legend()
             st.pyplot(fig)
 
