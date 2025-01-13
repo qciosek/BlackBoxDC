@@ -160,7 +160,7 @@ def main():
 
         selected_answers = st.multiselect(
             "Select answers to display in the bar chart:",
-            question_df['answer_text'] + ", " + question_df['question_code'].unique().tolist(),
+            question_df['dropdown_label'].tolist(),
         )
 
         # User inputs for customization
@@ -170,8 +170,13 @@ def main():
         orientation = st.radio("Choose Chart Orientation", ["Vertical", "Horizontal"])
 
         if selected_answers:
+            # Extract only the `answer_text` part from the selected answers
+            selected_answer_texts = [
+                answer.split(", ")[0] for answer in selected_answers
+            ]
+
             # Filter and sort data
-            filtered_df = df[df['answer_text'].isin(selected_answers)].drop_duplicates(subset=['answer_text'])
+            filtered_df = df[df['answer_text'].isin(selected_answer_texts)].drop_duplicates(subset=['answer_text'])
 
             # Determine the column to sort by
             sort_by = None
@@ -196,7 +201,6 @@ def plot_bar_chart(filtered_df, display_cut_percentage, display_avg_yes, display
     fig, ax = plt.subplots(figsize=(10, 6))
     x_pos = range(len(filtered_df))
 
-    # Calculate dynamic axis limits
     y_max = 0
     if display_cut_percentage:
         y_max = max(y_max, filtered_df['cutpercentage_numeric'].max())
@@ -208,14 +212,13 @@ def plot_bar_chart(filtered_df, display_cut_percentage, display_avg_yes, display
     y_limit = min(300, max(60, y_max + 10))
 
     if orientation == "Vertical":
-        bar_shift = -bar_width * (num_metrics // 2)  # Center the bars
+        bar_shift = -bar_width * (num_metrics // 2)
         for metric, display, color, label in [
             ("cutpercentage_numeric", display_cut_percentage, bar_color_cut, "Data Cut Percentages"),
             ("avg_yes_percentage_numeric", display_avg_yes, bar_color_yes, "Total Sample Percentages"),
             ("index", display_index, bar_color_index, "Index"),
         ]:
             if display:
-                # Plot the metric bars
                 ax.bar(
                     [pos + bar_shift for pos in x_pos],
                     filtered_df[metric],
@@ -223,26 +226,23 @@ def plot_bar_chart(filtered_df, display_cut_percentage, display_avg_yes, display
                     label=label,
                     color=color,
                 )
-
-                # Add percentage labels to the bars
                 for i, v in enumerate(filtered_df[metric]):
                     ax.text(i + bar_shift, v + 1, f"{v}%", ha='center', fontsize=9)
 
-                bar_shift += bar_width  # Move the next metric's bars
+                bar_shift += bar_width
 
         ax.set_ylabel("Percentage")
         ax.set_title("Bar Chart Visualization")
         plt.xticks(x_pos, filtered_df["answer_text"], rotation=45, ha="right")
 
-    else:  # Horizontal orientation
-        bar_shift = -bar_width * (num_metrics // 2)  # Center the bars
+    else:
+        bar_shift = -bar_width * (num_metrics // 2)
         for metric, display, color, label in [
             ("cutpercentage_numeric", display_cut_percentage, bar_color_cut, "Data Cut Percentages"),
             ("avg_yes_percentage_numeric", display_avg_yes, bar_color_yes, "Total Sample Percentages"),
             ("index", display_index, bar_color_index, "Index"),
         ]:
             if display:
-                # Plot the metric bars
                 ax.barh(
                     [pos + bar_shift for pos in x_pos],
                     filtered_df[metric],
@@ -250,12 +250,10 @@ def plot_bar_chart(filtered_df, display_cut_percentage, display_avg_yes, display
                     label=label,
                     color=color,
                 )
-
-                # Add percentage labels to the bars
                 for i, v in enumerate(filtered_df[metric]):
                     ax.text(v + 1, i + bar_shift, f"{v}%", va="center", fontsize=9)
 
-                bar_shift += bar_width  # Move the next metric's bars
+                bar_shift += bar_width
 
         ax.set_xlabel("Percentage")
         ax.set_title("Bar Chart Visualization")
