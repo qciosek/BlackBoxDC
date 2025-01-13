@@ -170,18 +170,32 @@ def main():
         bar_color_index = st.color_picker("Pick a Bar Color for Index", "#2ca02c")
         orientation = st.radio("Choose Chart Orientation", ["Vertical", "Horizontal"])
 
-        # Display bar charts for selected answers
-        if selected_answers:
-            # Filter for selected answers
+             if selected_answers:
+            # Filter and sort data
             filtered_df = df[df['answer_text'].isin(selected_answers)].drop_duplicates(subset=['answer_text'])
 
-            # Adjust the bar width depending on the number of metrics selected
-            num_metrics = sum([display_avg_yes, display_cut_percentage, display_index])
-            num_bars = len(filtered_df)
-            bar_width = 0.7 / num_metrics  # Adjust bar width based on the number of metrics
+            # Determine the column to sort by
+            sort_by = None
+            if display_cut_percentage:
+                sort_by = "cutpercentage_numeric"
+            elif display_avg_yes:
+                sort_by = "avg_yes_percentage_numeric"
+            elif display_index:
+                sort_by = "index"
 
-            fig, ax = plt.subplots(figsize=(10, 6))
-            x_pos = range(len(filtered_df))  # Positions for bars
+            if sort_by:
+                filtered_df = filtered_df.sort_values(by=sort_by, ascending=False)
+
+            # Plot the bar chart
+            plot_bar_chart(filtered_df, display_cut_percentage, display_avg_yes, display_index, bar_color_cut, bar_color_yes, bar_color_index, orientation)
+        else:
+            st.write("Please select answers to display in the bar chart.")
+
+def plot_bar_chart(filtered_df, display_cut_percentage, display_avg_yes, display_index, bar_color_cut, bar_color_yes, bar_color_index, orientation):
+    num_metrics = sum([display_avg_yes, display_cut_percentage, display_index])
+    bar_width = 0.7 / num_metrics
+    fig, ax = plt.subplots(figsize=(10, 6))
+    x_pos = range(len(filtered_df))
 
             if orientation == "Vertical":
                 bar_shift = -bar_width * (num_metrics // 2)  # Center the bars
