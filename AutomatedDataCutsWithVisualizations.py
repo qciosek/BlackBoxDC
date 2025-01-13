@@ -263,9 +263,9 @@ def plot_bar_chart(filtered_df, display_cut_percentage, display_avg_yes, display
                 # Add labels to each horizontal bar
                 for i, v in enumerate(filtered_df[metric]):
                     if metric == "index":
-                        ax.text(v + 1, i + bar_shift, f"{v:.2f}", va='center', fontsize=9)
+                        ax.text(v + 1, i + bar_shift, f"{v:.0f}", va='center', fontsize=9)
                     else:
-                        ax.text(v + 1, i + bar_shift, f"{v}%", va='center', fontsize=9)
+                        ax.text(v + 1, i + bar_shift, f"{v:.0f}%", va='center', fontsize=9)
 
                 # Adjust bar shift to the next metric position
                 bar_shift += bar_width
