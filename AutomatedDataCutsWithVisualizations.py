@@ -214,7 +214,7 @@ def plot_bar_chart(filtered_df, display_cut_percentage, display_avg_yes, display
     y_limit = min(300, max(60, y_max + 10))
 
     # Wrap the axis labels
-    max_chars_per_line = 20  # Adjust as needed for the desired width
+    max_chars_per_line = 30  # Adjust as needed for the desired width
     filtered_df["wrapped_text"] = filtered_df["answer_text"].apply(
         lambda text: textwrap.fill(text, width=max_chars_per_line)
     )
