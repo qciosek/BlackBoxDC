@@ -197,10 +197,11 @@ def main():
 
 def plot_bar_chart(filtered_df, display_cut_percentage, display_avg_yes, display_index, bar_color_cut, bar_color_yes, bar_color_index, orientation):
     num_metrics = sum([display_avg_yes, display_cut_percentage, display_index])
-    bar_width = 0.7 / num_metrics
+    bar_width = 0.7 / num_metrics  # Adjust the bar width depending on the number of metrics
     fig, ax = plt.subplots(figsize=(10, 6))
     x_pos = range(len(filtered_df))
 
+    # Define y_max and y_limit
     y_max = 0
     if display_cut_percentage:
         y_max = max(y_max, filtered_df['cutpercentage_numeric'].max())
@@ -212,55 +213,61 @@ def plot_bar_chart(filtered_df, display_cut_percentage, display_avg_yes, display
     y_limit = min(300, max(60, y_max + 10))
 
     if orientation == "Vertical":
-        bar_shift = -bar_width * (num_metrics // 2)
+        bar_shift = -bar_width * (num_metrics // 2)  # Initial shift to start from the left
         for metric, display, color, label in [
             ("cutpercentage_numeric", display_cut_percentage, bar_color_cut, "Data Cut Percentages"),
             ("avg_yes_percentage_numeric", display_avg_yes, bar_color_yes, "Total Sample Percentages"),
             ("index", display_index, bar_color_index, "Index"),
         ]:
             if display:
+                # Create bars for each metric, ensuring they are adjacent
                 ax.bar(
-                    [pos + bar_shift for pos in x_pos],
-                    filtered_df[metric],
+                    [pos + bar_shift for pos in x_pos], 
+                    filtered_df[metric], 
                     width=bar_width,
                     label=label,
                     color=color,
                 )
+                # Add labels to each bar
                 for i, v in enumerate(filtered_df[metric]):
                     if metric == "index":
-                        # Remove the '%' sign for index
+                        # For 'index' metric, remove '%' sign
                         ax.text(i + bar_shift, v + 1, f"{v:.0f}", ha='center', fontsize=9)
                     else:
-                        # Keep the '%' sign for cutpercentage and avg_yes_percentage
+                        # For other metrics, keep '%' sign
                         ax.text(i + bar_shift, v + 1, f"{v:.0f}%", ha='center', fontsize=9)
+
+                # Adjust bar shift to the next metric position
+                bar_shift += bar_width
 
         ax.set_ylabel("Percentage")
         ax.set_title("Bar Chart Visualization")
         plt.xticks(x_pos, filtered_df["answer_text"], rotation=45, ha="right")
 
-    else:
-        bar_shift = -bar_width * (num_metrics // 2)
+    else:  # Horizontal bar chart
+        bar_shift = -bar_width * (num_metrics // 2)  # Initial shift for horizontal bars
         for metric, display, color, label in [
             ("cutpercentage_numeric", display_cut_percentage, bar_color_cut, "Data Cut Percentages"),
             ("avg_yes_percentage_numeric", display_avg_yes, bar_color_yes, "Total Sample Percentages"),
             ("index", display_index, bar_color_index, "Index"),
         ]:
             if display:
+                # Create horizontal bars for each metric, ensuring they are adjacent
                 ax.barh(
-                    [pos + bar_shift for pos in x_pos],
+                    [pos + bar_shift for pos in x_pos], 
                     filtered_df[metric],
                     height=bar_width,
                     label=label,
                     color=color,
                 )
+                # Add labels to each horizontal bar
                 for i, v in enumerate(filtered_df[metric]):
                     if metric == "index":
-                        # Remove the '%' sign for index
-                        ax.text(i + bar_shift, v + 1, f"{v:.2f}", ha='center', fontsize=9)
+                        ax.text(v + 1, i + bar_shift, f"{v:.2f}", va='center', fontsize=9)
                     else:
-                        # Keep the '%' sign for cutpercentage and avg_yes_percentage
-                        ax.text(i + bar_shift, v + 1, f"{v}%", ha='center', fontsize=9)
+                        ax.text(v + 1, i + bar_shift, f"{v}%", va='center', fontsize=9)
 
+                # Adjust bar shift to the next metric position
                 bar_shift += bar_width
 
         ax.set_xlabel("Percentage")
@@ -270,6 +277,7 @@ def plot_bar_chart(filtered_df, display_cut_percentage, display_avg_yes, display
     ax.set_ylim(0, y_limit) if orientation == "Vertical" else ax.set_xlim(0, y_limit)
     ax.legend()
     st.pyplot(fig)
+
 
 if __name__ == "__main__":
     main()
