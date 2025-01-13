@@ -235,7 +235,7 @@ def plot_bar_chart(filtered_df, display_cut_percentage, display_avg_yes, display
                     color=color,
                 )
                 for i, v in enumerate(filtered_df[metric]):
-                    ax.text(i + bar_shift, v + 1, f"{v:.0f}%" if metric != "index" else f"{v:.0f}", ha="center", fontsize=9)
+                    ax.text(i + bar_shift, v + 1, f"{v:.0f}%" if metric != "index" else f"{v:.0f}", ha="center", fontsize=11)
 
                 bar_shift += bar_width
 
@@ -259,7 +259,7 @@ def plot_bar_chart(filtered_df, display_cut_percentage, display_avg_yes, display
                     color=color,
                 )
                 for i, v in enumerate(filtered_df[metric]):
-                    ax.text(v + 1, i + bar_shift, f"{v:.0f}%" if metric != "index" else f"{v:.0f}", va="center", fontsize=9)
+                    ax.text(v + 1, i + bar_shift, f"{v:.0f}%" if metric != "index" else f"{v:.0f}", va="center", fontsize=11)
 
                 bar_shift += bar_width
 
