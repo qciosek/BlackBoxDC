@@ -188,7 +188,7 @@ def main():
                 sort_by = "index"
 
             if sort_by:
-                filtered_df = filtered_df.sort_values(by=sort_by, ascending=False)
+                filtered_df = filtered_df.sort_values(by=sort_by, ascending=True)
 
             # Plot the bar chart
             plot_bar_chart(filtered_df, display_cut_percentage, display_avg_yes, display_index, bar_color_cut, bar_color_yes, bar_color_index, orientation)
