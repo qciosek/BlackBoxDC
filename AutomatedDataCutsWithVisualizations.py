@@ -226,43 +226,40 @@ def plot_bar_chart(filtered_df, display_cut_percentage, display_avg_yes, display
                     label=label,
                     color=color,
                 )
-                   for i, v in enumerate(filtered_df[metric]):
-    if metric == "index":
-        # Remove the '%' sign for index
-        ax.text(i + bar_shift, v + 1, f"{v:.2f}", ha='center', fontsize=9)
+                for i, v in enumerate(filtered_df[metric]):
+                    if metric == "index":
+                        # Remove the '%' sign for index
+                        ax.text(i + bar_shift, v + 1, f"{v:.2f}", ha='center', fontsize=9)
+                    else:
+                        # Keep the '%' sign for cutpercentage and avg_yes_percentage
+                        ax.text(i + bar_shift, v + 1, f"{v}%", ha='center', fontsize=9)
+
+        ax.set_ylabel("Percentage")
+        ax.set_title("Bar Chart Visualization")
+        plt.xticks(x_pos, filtered_df["answer_text"], rotation=45, ha="right")
+
     else:
-        # Keep the '%' sign for cutpercentage and avg_yes_percentage
-        ax.text(i + bar_shift, v + 1, f"{v}%", ha='center', fontsize=9)
-
-ax.set_ylabel("Percentage")
-ax.set_title("Bar Chart Visualization")
-plt.xticks(x_pos, filtered_df["answer_text"], rotation=45, ha="right")
-
-# Inside the 'else' block (for horizontal bars)
-else:
-    bar_shift = -bar_width * (num_metrics // 2)
-    for metric, display, color, label in [
-        ("cutpercentage_numeric", display_cut_percentage, bar_color_cut, "Data Cut Percentages"),
-        ("avg_yes_percentage_numeric", display_avg_yes, bar_color_yes, "Total Sample Percentages"),
-        ("index", display_index, bar_color_index, "Index"),
-    ]:
-        if display:
-            ax.barh(
-                [pos + bar_shift for pos in x_pos],
-                filtered_df[metric],
-                height=bar_width,
-                label=label,
-                color=color,
-            )
-            # Fix the indentation here:
-            for i, v in enumerate(filtered_df[metric]):
-                if metric == "index":
-                    # Remove the '%' sign for index
-                    ax.text(i + bar_shift, v + 1, f"{v:.2f}", ha='center', fontsize=9)
-                else:
-                    # Keep the '%' sign for cutpercentage and avg_yes_percentage
-                    ax.text(i + bar_shift, v + 1, f"{v}%", ha='center', fontsize=9)
-
+        bar_shift = -bar_width * (num_metrics // 2)
+        for metric, display, color, label in [
+            ("cutpercentage_numeric", display_cut_percentage, bar_color_cut, "Data Cut Percentages"),
+            ("avg_yes_percentage_numeric", display_avg_yes, bar_color_yes, "Total Sample Percentages"),
+            ("index", display_index, bar_color_index, "Index"),
+        ]:
+            if display:
+                ax.barh(
+                    [pos + bar_shift for pos in x_pos],
+                    filtered_df[metric],
+                    height=bar_width,
+                    label=label,
+                    color=color,
+                )
+                for i, v in enumerate(filtered_df[metric]):
+                    if metric == "index":
+                        # Remove the '%' sign for index
+                        ax.text(i + bar_shift, v + 1, f"{v:.2f}", ha='center', fontsize=9)
+                    else:
+                        # Keep the '%' sign for cutpercentage and avg_yes_percentage
+                        ax.text(i + bar_shift, v + 1, f"{v}%", ha='center', fontsize=9)
 
                 bar_shift += bar_width
 
