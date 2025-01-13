@@ -226,10 +226,14 @@ def plot_bar_chart(filtered_df, display_cut_percentage, display_avg_yes, display
                     label=label,
                     color=color,
                 )
-                for i, v in enumerate(filtered_df[metric]):
-                    ax.text(i + bar_shift, v + 1, f"{v}%", ha='center', fontsize=9)
+               for i, v in enumerate(filtered_df[metric]):
+                    if metric == "index":
+                        # Remove the '%' sign for index
+                        ax.text(i + bar_shift, v + 1, f"{v:.2f}", ha='center', fontsize=9)
+                    else:
+                        # Keep the '%' sign for cutpercentage and avg_yes_percentage
+                        ax.text(i + bar_shift, v + 1, f"{v}%", ha='center', fontsize=9)
 
-                bar_shift += bar_width
 
         ax.set_ylabel("Percentage")
         ax.set_title("Bar Chart Visualization")
@@ -251,7 +255,13 @@ def plot_bar_chart(filtered_df, display_cut_percentage, display_avg_yes, display
                     color=color,
                 )
                 for i, v in enumerate(filtered_df[metric]):
-                    ax.text(v + 1, i + bar_shift, f"{v}%", va="center", fontsize=9)
+                    if metric == "index":
+                        # Remove the '%' sign for index
+                        ax.text(i + bar_shift, v + 1, f"{v:.2f}", ha='center', fontsize=9)
+                    else:
+                        # Keep the '%' sign for cutpercentage and avg_yes_percentage
+                        ax.text(i + bar_shift, v + 1, f"{v}%", ha='center', fontsize=9)
+
 
                 bar_shift += bar_width
 
