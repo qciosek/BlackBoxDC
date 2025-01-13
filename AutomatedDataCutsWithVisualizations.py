@@ -160,7 +160,7 @@ def main():
 
         selected_answers = st.multiselect(
             "Select answers to display in the bar chart:",
-            df['answer_text'].unique().tolist(),
+            question_df['answer_text'] + ", " + question_df['question_code'].unique().tolist(),
         )
 
         # User inputs for customization
