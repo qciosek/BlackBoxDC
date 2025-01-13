@@ -3,6 +3,7 @@ import pymysql
 import pandas as pd
 import io
 import matplotlib.pyplot as plt
+import textwrap
 
 # Clear Streamlit cache
 st.cache_data.clear()
@@ -88,116 +89,26 @@ def fetch_data_and_sample_size(connection, selected_questions):
 
     return df, sample_size
 
-# Main function
-def main():
-    st.title("Fetch and Download Data")
+# Plot bar chart with editable labels
+def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, display_avg_yes, display_index, bar_color_cut, bar_color_yes, bar_color_index, orientation):
+    st.subheader("Edit Labels for the Bar Chart")
 
-    # Fetch the available question codes and answer texts for dropdown
-    connection = connect_to_db()
-    question_query = """
-    SELECT question_code, answer_text 
-    FROM question_mapping
-    ORDER BY answer_text, question_code
-    """
-    question_df = pd.read_sql(question_query, connection)
+    # Editable labels
+    edited_labels = []
+    for i, row in filtered_df.iterrows():
+        edited_label = st.text_input(f"Edit label for '{row['answer_text']}'", value=row['answer_text'])
+        edited_labels.append(edited_label)
 
-    # Create a dropdown displaying answer_text, question_code (e.g., "Winter Olympics, Q4_M20")
-    question_df['dropdown_label'] = question_df['answer_text'] + ", " + question_df['question_code']
-    question_options = question_df['dropdown_label'].tolist()
+    # Update DataFrame with edited labels
+    filtered_df["edited_text"] = edited_labels
 
-    # Add "No Answer" option to the dropdown
-    question_options = ["No Answer"] + question_options
+    # Re-wrap axis labels
+    max_chars_per_line = 30
+    filtered_df["wrapped_text"] = filtered_df["edited_text"].apply(
+        lambda text: textwrap.fill(text, width=max_chars_per_line)
+    )
 
-    # Dropdown menus for selecting up to 3 questions
-    question_selected_1 = st.selectbox("Select a Question (Optional):", question_options)
-    question_selected_2 = st.selectbox("Select a Second Question (Optional):", question_options)
-    question_selected_3 = st.selectbox("Select a Third Question (Optional):", question_options)
-
-    # Prepare the selected question codes, excluding "No Answer"
-    selected_questions = []
-    for question_selected in [question_selected_1, question_selected_2, question_selected_3]:
-        if question_selected != "No Answer":
-            question_code = question_df[question_df['dropdown_label'] == question_selected]['question_code'].values[0]
-            selected_questions.append(question_code)
-
-    # Only fetch data and update sample size if at least one question is selected
-    if selected_questions:
-        df, sample_size = fetch_data_and_sample_size(connection, selected_questions)
-        st.write(f"Sample Size = {sample_size}")
-    else:
-        st.write("Please select at least one question to calculate the sample size.")
-
-    # Check if data exists for the selected questions
-    if selected_questions and not df.empty:
-        # Show the data with percentages as strings
-        st.write("Data fetched from MySQL:")
-        st.dataframe(df)
-
-        # Convert 'cutpercentage' and 'avg_yes_percentage' columns for bar chart as numeric values (without '%')
-        df['cutpercentage_numeric'] = df['cutpercentage'].str.replace('%', '').astype(float)
-        df['avg_yes_percentage_numeric'] = df['avg_yes_percentage'].str.replace('%', '').astype(float)
-
-        # Convert the DataFrame to CSV in memory
-        csv_buffer = io.StringIO()
-        df.to_csv(csv_buffer, index=False)
-        csv_buffer.seek(0)
-
-        # Provide a download button
-        st.download_button(
-            label="Download CSV",
-            data=csv_buffer.getvalue(),
-            file_name="exported_data.csv",
-            mime="text/csv"
-        )
-
-        # Bar chart visualization
-        st.subheader("Bar Chart Visualization")
-
-        # Allow user to select which metrics to display in the bar chart
-        display_avg_yes = st.checkbox("Display Total Sample Percentages", value=True)
-        display_cut_percentage = st.checkbox("Display Data Cut Percentages", value=True)
-        display_index = st.checkbox("Display Index", value=False)
-
-        selected_answers = st.multiselect(
-            "Select answers to display in the bar chart:",
-            question_df['dropdown_label'].tolist(),
-        )
-
-        # User inputs for customization
-        bar_color_cut = st.color_picker("Pick a Bar Color for Data Cut Percentages", "#1f77b4")
-        bar_color_yes = st.color_picker("Pick a Bar Color for Total Sample Percentages", "#ff7f0e")
-        bar_color_index = st.color_picker("Pick a Bar Color for Index", "#2ca02c")
-        orientation = st.radio("Choose Chart Orientation", ["Vertical", "Horizontal"])
-
-        if selected_answers:
-            # Extract only the `answer_text` part from the selected answers
-            selected_answer_texts = [
-                answer.split(", ")[0] for answer in selected_answers
-            ]
-
-            # Filter and sort data
-            filtered_df = df[df['answer_text'].isin(selected_answer_texts)].drop_duplicates(subset=['answer_text'])
-
-            # Determine the column to sort by
-            sort_by = None
-            if display_cut_percentage:
-                sort_by = "cutpercentage_numeric"
-            elif display_avg_yes:
-                sort_by = "avg_yes_percentage_numeric"
-            elif display_index:
-                sort_by = "index"
-
-            if sort_by:
-                filtered_df = filtered_df.sort_values(by=sort_by, ascending=True)
-
-            # Plot the bar chart
-            plot_bar_chart(filtered_df, display_cut_percentage, display_avg_yes, display_index, bar_color_cut, bar_color_yes, bar_color_index, orientation)
-        else:
-            st.write("Please select answers to display in the bar chart.")
-
-import textwrap
-
-def plot_bar_chart(filtered_df, display_cut_percentage, display_avg_yes, display_index, bar_color_cut, bar_color_yes, bar_color_index, orientation):
+    # Plot chart
     num_metrics = sum([display_avg_yes, display_cut_percentage, display_index])
     bar_width = 0.7 / num_metrics
     fig, ax = plt.subplots(figsize=(10, 6))
@@ -212,12 +123,6 @@ def plot_bar_chart(filtered_df, display_cut_percentage, display_avg_yes, display
         y_max = max(y_max, filtered_df['index'].max())
 
     y_limit = min(300, max(60, y_max + 10))
-
-    # Wrap the axis labels
-    max_chars_per_line = 30  # Adjust as needed for the desired width
-    filtered_df["wrapped_text"] = filtered_df["answer_text"].apply(
-        lambda text: textwrap.fill(text, width=max_chars_per_line)
-    )
 
     if orientation == "Vertical":
         bar_shift = -bar_width * (num_metrics // 2)
@@ -235,7 +140,7 @@ def plot_bar_chart(filtered_df, display_cut_percentage, display_avg_yes, display
                     color=color,
                 )
                 for i, v in enumerate(filtered_df[metric]):
-                    ax.text(i + bar_shift, v + 1, f"{v:.0f}%" if metric != "index" else f"{v:.0f}", ha="center", fontsize=11)
+                    ax.text(i + bar_shift, v + 1, f"{v:.0f}%" if metric != "index" else f"{v:.0f}", ha="center", fontsize=9)
 
                 bar_shift += bar_width
 
@@ -259,7 +164,7 @@ def plot_bar_chart(filtered_df, display_cut_percentage, display_avg_yes, display
                     color=color,
                 )
                 for i, v in enumerate(filtered_df[metric]):
-                    ax.text(v + 1, i + bar_shift, f"{v:.0f}%" if metric != "index" else f"{v:.0f}", va="center", fontsize=11)
+                    ax.text(v + 1, i + bar_shift, f"{v:.0f}%" if metric != "index" else f"{v:.0f}", va="center", fontsize=9)
 
                 bar_shift += bar_width
 
@@ -270,6 +175,92 @@ def plot_bar_chart(filtered_df, display_cut_percentage, display_avg_yes, display
     ax.set_ylim(0, y_limit) if orientation == "Vertical" else ax.set_xlim(0, y_limit)
     ax.legend()
     st.pyplot(fig)
+
+# Main function
+def main():
+    st.title("Fetch and Download Data with Editable Bar Chart")
+
+    # Fetch the available question codes and answer texts for dropdown
+    connection = connect_to_db()
+    question_query = """
+    SELECT question_code, answer_text 
+    FROM question_mapping
+    ORDER BY answer_text, question_code
+    """
+    question_df = pd.read_sql(question_query, connection)
+
+    question_df['dropdown_label'] = question_df['answer_text'] + ", " + question_df['question_code']
+    question_options = ["No Answer"] + question_df['dropdown_label'].tolist()
+
+    question_selected_1 = st.selectbox("Select a Question (Optional):", question_options)
+    question_selected_2 = st.selectbox("Select a Second Question (Optional):", question_options)
+    question_selected_3 = st.selectbox("Select a Third Question (Optional):", question_options)
+
+    selected_questions = [
+        question_df[question_df['dropdown_label'] == q]['question_code'].values[0]
+        for q in [question_selected_1, question_selected_2, question_selected_3]
+        if q != "No Answer"
+    ]
+
+    if selected_questions:
+        df, sample_size = fetch_data_and_sample_size(connection, selected_questions)
+        st.write(f"Sample Size = {sample_size}")
+        if not df.empty:
+            st.write("Data fetched from MySQL:")
+            st.dataframe(df)
+
+            df['cutpercentage_numeric'] = df['cutpercentage'].str.replace('%', '').astype(float)
+            df['avg_yes_percentage_numeric'] = df['avg_yes_percentage'].str.replace('%', '').astype(float)
+
+            csv_buffer = io.StringIO()
+            df.to_csv(csv_buffer, index=False)
+            csv_buffer.seek(0)
+
+            st.download_button(
+                label="Download CSV",
+                data=csv_buffer.getvalue(),
+                file_name="exported_data.csv",
+                mime="text/csv"
+            )
+
+            st.subheader("Bar Chart Visualization")
+
+            display_avg_yes = st.checkbox("Display Total Sample Percentages", value=True)
+            display_cut_percentage = st.checkbox("Display Data Cut Percentages", value=True)
+            display_index = st.checkbox("Display Index", value=False)
+
+            selected_answers = st.multiselect(
+                "Select answers to display in the bar chart:",
+                question_df['dropdown_label'].tolist(),
+            )
+
+            bar_color_cut = st.color_picker("Pick a Bar Color for Data Cut Percentages", "#1f77b4")
+            bar_color_yes = st.color_picker("Pick a Bar Color for Total Sample Percentages", "#ff7f0e")
+            bar_color_index = st.color_picker("Pick a Bar Color for Index", "#2ca02c")
+            orientation = st.radio("Choose Chart Orientation", ["Vertical", "Horizontal"])
+
+            if selected_answers:
+                selected_answer_texts = [
+                    answer.split(", ")[0] for answer in selected_answers
+                ]
+                filtered_df = df[df['answer_text'].isin(selected_answer_texts)].drop_duplicates(subset=['answer_text'])
+
+                plot_bar_chart_with_editable_labels(
+                    filtered_df,
+                    display_cut_percentage,
+                    display_avg_yes,
+                    display_index,
+                    bar_color_cut,
+                    bar_color_yes,
+                    bar_color_index,
+                    orientation
+                )
+            else:
+                st.write("Please select answers to display in the bar chart.")
+        else:
+            st.write("No data available for the selected questions.")
+    else:
+        st.write("Please select at least one question to calculate the sample size.")
 
 
 if __name__ == "__main__":
