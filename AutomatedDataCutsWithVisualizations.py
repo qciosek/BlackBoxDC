@@ -5,6 +5,7 @@ import io
 import matplotlib.pyplot as plt
 import textwrap
 import unicodedata
+
 # Clear Streamlit cache
 st.cache_data.clear()
 
@@ -215,9 +216,8 @@ def plot_bar_chart(filtered_df, display_cut_percentage, display_avg_yes, display
 
     y_limit = min(300, max(60, y_max + 10))
 
-  # Wrap the axis labels with proper handling of dashes
+    # Wrap the axis labels with proper handling of dashes
     max_chars_per_line = 30  # Adjust as needed for the desired width
-    
 
     # Apply wrapping with special handling for dashes, commas, and parentheses
     def wrap_text_with_special_characters(text, max_width):
@@ -243,15 +243,10 @@ def plot_bar_chart(filtered_df, display_cut_percentage, display_avg_yes, display
 
         return wrapped_text
 
-# Apply this function to the 'answer_text' column for proper wrapping
-filtered_df["wrapped_text"] = filtered_df["answer_text"].apply(
-    lambda text: wrap_text_with_special_characters(text, max_chars_per_line)
-)
-
-
-
-
-
+    # Apply this function to the 'answer_text' column for proper wrapping
+    filtered_df["wrapped_text"] = filtered_df["answer_text"].apply(
+        lambda text: wrap_text_with_special_characters(text, max_chars_per_line)
+    )
 
     if orientation == "Vertical":
         bar_shift = -bar_width * (num_metrics // 2)
