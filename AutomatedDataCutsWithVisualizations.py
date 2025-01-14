@@ -221,10 +221,11 @@ def plot_bar_chart(filtered_df, display_cut_percentage, display_avg_yes, display
 
     filtered_df["wrapped_text"] = filtered_df["answer_text"].apply(
         lambda text: textwrap.fill(
-            unicodedata.normalize("NFKD", text.replace("-", " - ")),  # Normalize text and handle dashes
+            unicodedata.normalize("NFKD", text.replace("-", " - ").replace(",", ", ")),  # Normalize and handle dashes and commas
             width=max_chars_per_line
         ).replace(" - ", "-")  # Revert spaces around dashes back to original
     )
+
 
 
 
