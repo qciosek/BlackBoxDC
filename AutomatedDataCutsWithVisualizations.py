@@ -4,7 +4,6 @@ import pandas as pd
 import io
 import matplotlib.pyplot as plt
 import textwrap
-import unicodedata
 
 # Clear Streamlit cache
 st.cache_data.clear()
@@ -89,30 +88,6 @@ def fetch_data_and_sample_size(connection, selected_questions):
     df = pd.read_sql(query, connection)
 
     return df, sample_size
-
-# Wrap the axis labels with proper handling of dashes
-def wrap_text_with_special_characters(text, max_width):
-    # Normalize text to handle any special characters
-    text = unicodedata.normalize("NFKD", text)
-
-    # First, handle the special characters (spaces around dashes, commas, parentheses)
-    text = (text.replace("-", " - ")  # Add space around dashes
-            .replace(",", ", ")  # Add space after commas
-            .replace("(", " (")  # Add space before opening parenthesis
-            .replace(")", ") ")  # Add space after closing parenthesis
-    )
-
-    # Now apply text wrapping
-    wrapped_text = textwrap.fill(text, width=max_width)
-
-    # After wrapping, revert the changes for spacing around special characters
-    wrapped_text = (wrapped_text.replace(" - ", "-")
-                    .replace(", ", ",")
-                    .replace(" (", "(")
-                    .replace(") ", ")")
-    )
-
-    return wrapped_text
 
 # Main function
 def main():
@@ -240,9 +215,10 @@ def plot_bar_chart(filtered_df, display_cut_percentage, display_avg_yes, display
 
     y_limit = min(300, max(60, y_max + 10))
 
-    # Apply text wrapping
+    # Wrap the axis labels
+    max_chars_per_line = 30  # Adjust as needed for the desired width
     filtered_df["wrapped_text"] = filtered_df["answer_text"].apply(
-        lambda text: wrap_text_with_special_characters(text, max_width=30)
+        lambda text: textwrap.fill(text, width=max_chars_per_line)
     )
 
     if orientation == "Vertical":
@@ -296,6 +272,7 @@ def plot_bar_chart(filtered_df, display_cut_percentage, display_avg_yes, display
     ax.set_ylim(0, y_limit) if orientation == "Vertical" else ax.set_xlim(0, y_limit)
     ax.legend()
     st.pyplot(fig)
+
 
 if __name__ == "__main__":
     main()
