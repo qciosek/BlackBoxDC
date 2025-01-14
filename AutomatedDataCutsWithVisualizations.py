@@ -4,7 +4,7 @@ import pandas as pd
 import io
 import matplotlib.pyplot as plt
 import textwrap
-
+import unicodedata
 # Clear Streamlit cache
 st.cache_data.clear()
 
@@ -217,14 +217,22 @@ def plot_bar_chart(filtered_df, display_cut_percentage, display_avg_yes, display
 
   # Wrap the axis labels with proper handling of dashes
     max_chars_per_line = 30  # Adjust as needed for the desired width
-    import unicodedata
-
+    # Apply wrapping with special handling for dashes, commas, and other edge cases
     filtered_df["wrapped_text"] = filtered_df["answer_text"].apply(
         lambda text: textwrap.fill(
-            unicodedata.normalize("NFKD", text.replace("-", " - ").replace(",", ", ")),  # Normalize and handle dashes and commas
+            unicodedata.normalize("NFKD", text)
+            .replace("-", " - ")  # Add spaces around dashes
+            .replace(",", ", ")  # Add spaces after commas
+            .replace("(", " (")  # Add space before opening parenthesis
+            .replace(")", ") "),  # Add space after closing parenthesis
             width=max_chars_per_line
-        ).replace(" - ", "-")  # Revert spaces around dashes back to original
+        )
+        .replace(" - ", "-")  # Revert spaces around dashes
+        .replace(", ", ",")  # Revert spaces after commas
+        .replace(" (", "(")  # Revert spaces before parentheses
+        .replace(") ", ")")  # Revert spaces after parentheses
     )
+
 
 
 
