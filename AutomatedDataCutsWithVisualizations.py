@@ -173,7 +173,7 @@ def main():
         if selected_answers:
             # Extract only the `answer_text` part from the selected answers
             selected_answer_texts = [
-            answer.split(", ")[0] for answer in selected_answers
+                answer.split(", ")[0] for answer in selected_answers
             ]
 
             # Filter the data based on the selected answers
@@ -181,7 +181,7 @@ def main():
 
             # Sort the filtered data based on the selected metric
             sort_by = None
-                if display_cut_percentage:
+            if display_cut_percentage:
                 sort_by = "cutpercentage_numeric"
             elif display_avg_yes:
                 sort_by = "avg_yes_percentage_numeric"
