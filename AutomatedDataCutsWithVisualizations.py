@@ -173,15 +173,15 @@ def main():
         if selected_answers:
             # Extract only the `answer_text` part from the selected answers
             selected_answer_texts = [
-                answer.split(", ")[0] for answer in selected_answers
+            answer.split(", ")[0] for answer in selected_answers
             ]
 
-            # Filter and sort data
+            # Filter the data based on the selected answers
             filtered_df = df[df['answer_text'].isin(selected_answer_texts)].drop_duplicates(subset=['answer_text'])
 
-            # Determine the column to sort by
+            # Sort the filtered data based on the selected metric
             sort_by = None
-            if display_cut_percentage:
+                if display_cut_percentage:
                 sort_by = "cutpercentage_numeric"
             elif display_avg_yes:
                 sort_by = "avg_yes_percentage_numeric"
@@ -191,7 +191,10 @@ def main():
             if sort_by:
                 filtered_df = filtered_df.sort_values(by=sort_by, ascending=True)
 
-            # Plot the bar chart
+            # Limit the displayed data to a maximum of 10 rows
+            filtered_df = filtered_df.head(10)
+
+            # Plot the bar chart with the top 10 rows
             plot_bar_chart(filtered_df, display_cut_percentage, display_avg_yes, display_index, bar_color_cut, bar_color_yes, bar_color_index, orientation)
         else:
             st.write("Please select answers to display in the bar chart.")
