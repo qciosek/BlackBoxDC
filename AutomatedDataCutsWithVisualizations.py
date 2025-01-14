@@ -217,21 +217,37 @@ def plot_bar_chart(filtered_df, display_cut_percentage, display_avg_yes, display
 
   # Wrap the axis labels with proper handling of dashes
     max_chars_per_line = 30  # Adjust as needed for the desired width
-    # Apply wrapping with special handling for dashes, commas, and other edge cases
-    filtered_df["wrapped_text"] = filtered_df["answer_text"].apply(
-        lambda text: textwrap.fill(
-            unicodedata.normalize("NFKD", text)
-            .replace("-", " - ")  # Add spaces around dashes
-            .replace(",", ", ")  # Add spaces after commas
-            .replace("(", " (")  # Add space before opening parenthesis
-            .replace(")", ") "),  # Add space after closing parenthesis
-            width=max_chars_per_line
+    
+
+    # Apply wrapping with special handling for dashes, commas, and parentheses
+    def wrap_text_with_special_characters(text, max_width):
+        # Normalize text to handle any special characters
+        text = unicodedata.normalize("NFKD", text)
+
+        # First, handle the special characters (spaces around dashes, commas, parentheses)
+        text = (text.replace("-", " - ")  # Add space around dashes
+                .replace(",", ", ")  # Add space after commas
+                .replace("(", " (")  # Add space before opening parenthesis
+                .replace(")", ") ")  # Add space after closing parenthesis
         )
-        .replace(" - ", "-")  # Revert spaces around dashes
-        .replace(", ", ",")  # Revert spaces after commas
-        .replace(" (", "(")  # Revert spaces before parentheses
-        .replace(") ", ")")  # Revert spaces after parentheses
-    )
+
+        # Now apply text wrapping
+        wrapped_text = textwrap.fill(text, width=max_width)
+
+        # After wrapping, revert the changes for spacing around special characters
+        wrapped_text = (wrapped_text.replace(" - ", "-")
+                        .replace(", ", ",")
+                        .replace(" (", "(")
+                        .replace(") ", ")")
+        )
+
+        return wrapped_text
+
+# Apply this function to the 'answer_text' column for proper wrapping
+filtered_df["wrapped_text"] = filtered_df["answer_text"].apply(
+    lambda text: wrap_text_with_special_characters(text, max_chars_per_line)
+)
+
 
 
 
