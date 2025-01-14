@@ -217,12 +217,15 @@ def plot_bar_chart(filtered_df, display_cut_percentage, display_avg_yes, display
 
   # Wrap the axis labels with proper handling of dashes
     max_chars_per_line = 30  # Adjust as needed for the desired width
+    import unicodedata
+
     filtered_df["wrapped_text"] = filtered_df["answer_text"].apply(
         lambda text: textwrap.fill(
-            text.replace("-", " - "),  # Add spaces around dashes for wrapping
+            unicodedata.normalize("NFKD", text.replace("-", " - ")),  # Normalize text and handle dashes
             width=max_chars_per_line
         ).replace(" - ", "-")  # Revert spaces around dashes back to original
     )
+
 
 
     if orientation == "Vertical":
