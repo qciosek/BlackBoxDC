@@ -248,7 +248,12 @@ def main():
                     question_df[question_df['dropdown_label'] == answer]['answer_text'].values[0]
                     for answer in selected_answers
                 ]
-                filtered_df = df[df['answer_text'].isin(selected_answer_texts)]
+
+                # Updated filtering: Use both 'answer_text' and 'question_code' to avoid duplicates
+                filtered_df = df[df.apply(
+                    lambda row: any((row['answer_text'] == ans_text and row['question_code'] == question_code) for ans_text, question_code in zip(selected_answer_texts, selected_questions)), axis=1
+                )]
+
                 plot_bar_chart_with_editable_labels(
                     filtered_df,
                     display_cut_percentage,
