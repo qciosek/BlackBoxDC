@@ -30,10 +30,9 @@ def fetch_data_and_sample_size(connection, selected_questions):
         SELECT COUNT(DISTINCT participant_id) AS sample_size
         FROM responses
         WHERE question_code IN ('{question_code_filter}')
-        AND response_text = 'Yes'
         """
     else:
-        sample_size_query = "SELECT COUNT(DISTINCT participant_id) AS sample_size FROM responses WHERE response_text = 'Yes'"
+        sample_size_query = "SELECT COUNT(DISTINCT participant_id) AS sample_size FROM responses"
 
     sample_size_df = pd.read_sql(sample_size_query, connection)
     sample_size = sample_size_df['sample_size'][0] if not sample_size_df.empty else 0
@@ -97,7 +96,12 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
     # Editable labels
     edited_labels = []
     for i, row in filtered_df.iterrows():
-        edited_label = st.text_input(f"Edit label for '{row['answer_text']}'", value=row['answer_text'])
+        # Use the index as part of the key to ensure uniqueness
+        edited_label = st.text_input(
+            f"Edit label for '{row['answer_text']}'", 
+            value=row['answer_text'],
+            key=f"label_input_{i}"  # Unique key using the index
+        )
         edited_labels.append(edited_label)
 
     # Update DataFrame with edited labels
@@ -209,7 +213,6 @@ def main():
             st.write("Data fetched from MySQL:")
             st.dataframe(df)
 
-            # Make cutpercentage_numeric and avg_yes_percentage_numeric visible now
             df['cutpercentage_numeric'] = df['cutpercentage'].str.replace('%', '').astype(float)
             df['avg_yes_percentage_numeric'] = df['avg_yes_percentage'].str.replace('%', '').astype(float)
 
