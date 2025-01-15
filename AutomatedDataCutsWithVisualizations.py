@@ -24,20 +24,7 @@ def fetch_data_and_sample_size(connection, selected_questions):
     # Prepare the question filter
     question_code_filter = "', '".join(selected_questions)
 
-    # Query to get the sample size (distinct participant IDs)
-    if question_code_filter:
-        sample_size_query = f"""
-        SELECT COUNT(DISTINCT participant_id) AS sample_size
-        FROM responses
-        WHERE question_code IN ('{question_code_filter}')
-        """
-    else:
-        sample_size_query = "SELECT COUNT(DISTINCT participant_id) AS sample_size FROM responses"
-
-    sample_size_df = pd.read_sql(sample_size_query, connection)
-    sample_size = sample_size_df['sample_size'][0] if not sample_size_df.empty else 0
-
-    # Query to retrieve the data based on selected questions
+    # Query to retrieve the filtered data and calculate the sample size
     if question_code_filter:
         query = f"""
         WITH filtered_responses AS (
@@ -75,7 +62,8 @@ def fetch_data_and_sample_size(connection, selected_questions):
             CASE 
                 WHEN aa.avg_yes_percentage = 0 THEN NULL
                 ELSE ROUND((cp.cutpercentage / aa.avg_yes_percentage) * 100)
-            END AS `index`
+            END AS `index`,
+            (SELECT COUNT(*) FROM filtered_responses) AS sample_size
         FROM cut_percentage cp
         JOIN average_answer aa ON cp.question_code = aa.question_code
         JOIN question_mapping qm ON cp.question_code = qm.question_code
@@ -86,6 +74,10 @@ def fetch_data_and_sample_size(connection, selected_questions):
 
     # Fetch data as DataFrame
     df = pd.read_sql(query, connection)
+
+    # Extract the sample size from the DataFrame
+    sample_size = df['sample_size'][0] if not df.empty else 0
+    df = df.drop(columns=['sample_size'], errors='ignore')  # Remove sample size column from the main DataFrame
 
     return df, sample_size
 
