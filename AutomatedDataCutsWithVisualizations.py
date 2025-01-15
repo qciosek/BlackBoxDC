@@ -24,15 +24,16 @@ def fetch_data_and_sample_size(connection, selected_questions):
     # Prepare the question filter
     question_code_filter = "', '".join(selected_questions)
 
-    # Query to get the sample size (distinct participant IDs)
+    # Query to get the sample size (distinct participant IDs who said 'Yes' to the selected questions)
     if question_code_filter:
         sample_size_query = f"""
         SELECT COUNT(DISTINCT participant_id) AS sample_size
         FROM responses
-        WHERE question_code IN ('{question_code_filter}')
+        WHERE response_text = 'Yes'
+        AND question_code IN ('{question_code_filter}')
         """
     else:
-        sample_size_query = "SELECT COUNT(DISTINCT participant_id) AS sample_size FROM responses"
+        sample_size_query = "SELECT COUNT(DISTINCT participant_id) AS sample_size FROM responses WHERE response_text = 'Yes'"
 
     sample_size_df = pd.read_sql(sample_size_query, connection)
     sample_size = sample_size_df['sample_size'][0] if not sample_size_df.empty else 0
