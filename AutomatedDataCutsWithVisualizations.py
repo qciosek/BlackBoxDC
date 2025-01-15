@@ -244,15 +244,13 @@ def main():
             orientation = st.radio("Choose Chart Orientation", ["Vertical", "Horizontal"])
 
             if selected_answers:
-                selected_answer_texts = [
-                    question_df[question_df['dropdown_label'] == answer]['answer_text'].values[0]
-                    for answer in selected_answers
-                ]
+                # Get corresponding question_code for selected answers
+                selected_question_codes = question_df[
+                    question_df['dropdown_label'].isin(selected_answers)
+                ]['question_code'].tolist()
 
-                # Updated filtering: Use both 'answer_text' and 'question_code' to avoid duplicates
-                filtered_df = df[df.apply(
-                    lambda row: any((row['answer_text'] == ans_text and row['question_code'] == question_code) for ans_text, question_code in zip(selected_answer_texts, selected_questions)), axis=1
-                )]
+                # Filter data based on selected answers' question_codes
+                filtered_df = df[df['question_code'].isin(selected_question_codes)]
 
                 plot_bar_chart_with_editable_labels(
                     filtered_df,
