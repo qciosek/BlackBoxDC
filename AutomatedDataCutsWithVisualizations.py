@@ -30,9 +30,10 @@ def fetch_data_and_sample_size(connection, selected_questions):
         SELECT COUNT(DISTINCT participant_id) AS sample_size
         FROM responses
         WHERE question_code IN ('{question_code_filter}')
+        AND response_text = 'Yes'
         """
     else:
-        sample_size_query = "SELECT COUNT(DISTINCT participant_id) AS sample_size FROM responses"
+        sample_size_query = "SELECT COUNT(DISTINCT participant_id) AS sample_size FROM responses WHERE response_text = 'Yes'"
 
     sample_size_df = pd.read_sql(sample_size_query, connection)
     sample_size = sample_size_df['sample_size'][0] if not sample_size_df.empty else 0
@@ -208,8 +209,10 @@ def main():
             st.write("Data fetched from MySQL:")
             st.dataframe(df)
 
+            # Make cutpercentage_numeric and avg_yes_percentage_numeric invisible to the user but still used for sorting
             df['cutpercentage_numeric'] = df['cutpercentage'].str.replace('%', '').astype(float)
             df['avg_yes_percentage_numeric'] = df['avg_yes_percentage'].str.replace('%', '').astype(float)
+            df = df.drop(columns=["cutpercentage_numeric", "avg_yes_percentage_numeric"])
 
             csv_buffer = io.StringIO()
             df.to_csv(csv_buffer, index=False)
