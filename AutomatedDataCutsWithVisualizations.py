@@ -97,7 +97,6 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
     # Editable labels
     edited_labels = []
     for i, row in filtered_df.iterrows():
-        # Use the index as part of the key to ensure uniqueness
         edited_label = st.text_input(
             f"Edit label for '{row['answer_text']}'", 
             value=row['answer_text'],
@@ -113,6 +112,17 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
     filtered_df["wrapped_text"] = filtered_df["edited_text"].apply(
         lambda text: textwrap.fill(text, width=max_chars_per_line)
     )
+
+    # Sort the DataFrame by the chosen metrics (ascending order)
+    sort_column = None
+    if display_cut_percentage:
+        sort_column = 'cutpercentage_numeric'
+    elif display_avg_yes:
+        sort_column = 'avg_yes_percentage_numeric'
+    elif display_index:
+        sort_column = 'index'
+    
+    filtered_df.sort_values(by=sort_column, ascending=True, inplace=True)
 
     # Plot chart
     num_metrics = sum([display_avg_yes, display_cut_percentage, display_index])
