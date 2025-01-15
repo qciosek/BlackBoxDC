@@ -209,10 +209,9 @@ def main():
             st.write("Data fetched from MySQL:")
             st.dataframe(df)
 
-            # Make cutpercentage_numeric and avg_yes_percentage_numeric invisible to the user but still used for sorting
+            # Make cutpercentage_numeric and avg_yes_percentage_numeric visible now
             df['cutpercentage_numeric'] = df['cutpercentage'].str.replace('%', '').astype(float)
             df['avg_yes_percentage_numeric'] = df['avg_yes_percentage'].str.replace('%', '').astype(float)
-            df = df.drop(columns=["cutpercentage_numeric", "avg_yes_percentage_numeric"])
 
             csv_buffer = io.StringIO()
             df.to_csv(csv_buffer, index=False)
