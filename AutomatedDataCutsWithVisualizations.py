@@ -21,10 +21,8 @@ def connect_to_db():
 
 # Fetch data and sample size
 def fetch_data_and_sample_size(connection, selected_questions):
-    # Prepare the question filter
     question_code_filter = "', '".join(selected_questions)
 
-    # Query to get the sample size (distinct participant IDs who said 'Yes' to the selected questions)
     if question_code_filter:
         sample_size_query = f"""
         SELECT COUNT(DISTINCT participant_id) AS sample_size
@@ -38,7 +36,6 @@ def fetch_data_and_sample_size(connection, selected_questions):
     sample_size_df = pd.read_sql(sample_size_query, connection)
     sample_size = sample_size_df['sample_size'][0] if not sample_size_df.empty else 0
 
-    # Query to retrieve the data based on selected questions
     if question_code_filter:
         query = f"""
         WITH filtered_responses AS (
@@ -83,37 +80,41 @@ def fetch_data_and_sample_size(connection, selected_questions):
         ORDER BY question_text, answer_text;
         """
     else:
-        query = "SELECT * FROM responses WHERE 1=0"  # Return an empty result if no questions are selected
+        query = "SELECT * FROM responses WHERE 1=0"
 
-    # Fetch data as DataFrame
     df = pd.read_sql(query, connection)
 
     return df, sample_size
 
 # Plot bar chart with editable labels
-def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, display_avg_yes, display_index, bar_color_cut, bar_color_yes, bar_color_index, orientation, chart_title, legend_labels):
-    st.subheader("Edit Labels for the Bar Chart")
+def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, display_avg_yes, display_index, bar_color_cut, bar_color_yes, bar_color_index, orientation):
+    st.subheader("Edit Chart Labels and Title")
 
-    # Editable labels
+    # Editable chart title
+    chart_title = st.text_input("Edit Bar Chart Title", value="Bar Chart Visualization")
+
+    # Editable legend labels
+    legend_cut_percentage = st.text_input("Legend for Data Cut Percentages", value="Data Cut Percentages")
+    legend_avg_yes = st.text_input("Legend for Total Sample Percentages", value="Total Sample Percentages")
+    legend_index = st.text_input("Legend for Index", value="Index")
+
+    # Editable bar labels
     edited_labels = []
     for i, row in filtered_df.iterrows():
         edited_label = st.text_input(
             f"Edit label for '{row['answer_text']}'", 
             value=row['answer_text'],
-            key=f"label_input_{i}"  # Unique key using the index
+            key=f"label_input_{i}"
         )
         edited_labels.append(edited_label)
 
-    # Update DataFrame with edited labels
     filtered_df["edited_text"] = edited_labels
 
-    # Re-wrap axis labels
     max_chars_per_line = 30
     filtered_df["wrapped_text"] = filtered_df["edited_text"].apply(
         lambda text: textwrap.fill(text, width=max_chars_per_line)
     )
 
-    # Sort the DataFrame by the chosen metrics (ascending order)
     sort_column = None
     if display_cut_percentage:
         sort_column = 'cutpercentage_numeric'
@@ -121,10 +122,9 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
         sort_column = 'avg_yes_percentage_numeric'
     elif display_index:
         sort_column = 'index'
-    
+
     filtered_df.sort_values(by=sort_column, ascending=True, inplace=True)
 
-    # Plot chart
     num_metrics = sum([display_avg_yes, display_cut_percentage, display_index])
     bar_width = 0.7 / num_metrics
     fig, ax = plt.subplots(figsize=(10, 6))
@@ -143,9 +143,9 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
     if orientation == "Vertical":
         bar_shift = -bar_width * (num_metrics // 2)
         for metric, display, color, label in [
-            ("cutpercentage_numeric", display_cut_percentage, bar_color_cut, legend_labels["cut_percentage"]),
-            ("avg_yes_percentage_numeric", display_avg_yes, bar_color_yes, legend_labels["avg_yes"]),
-            ("index", display_index, bar_color_index, legend_labels["index"]),
+            ("cutpercentage_numeric", display_cut_percentage, bar_color_cut, legend_cut_percentage),
+            ("avg_yes_percentage_numeric", display_avg_yes, bar_color_yes, legend_avg_yes),
+            ("index", display_index, bar_color_index, legend_index),
         ]:
             if display:
                 ax.bar(
@@ -164,12 +164,12 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
         ax.set_title(chart_title)
         plt.xticks(x_pos, filtered_df["wrapped_text"], rotation=45, ha="right")
 
-    else:  # Horizontal orientation
+    else:
         bar_shift = -bar_width * (num_metrics // 2)
         for metric, display, color, label in [
-            ("cutpercentage_numeric", display_cut_percentage, bar_color_cut, legend_labels["cut_percentage"]),
-            ("avg_yes_percentage_numeric", display_avg_yes, bar_color_yes, legend_labels["avg_yes"]),
-            ("index", display_index, bar_color_index, legend_labels["index"]),
+            ("cutpercentage_numeric", display_cut_percentage, bar_color_cut, legend_cut_percentage),
+            ("avg_yes_percentage_numeric", display_avg_yes, bar_color_yes, legend_avg_yes),
+            ("index", display_index, bar_color_index, legend_index),
         ]:
             if display:
                 ax.barh(
@@ -254,20 +254,11 @@ def main():
             bar_color_index = st.color_picker("Pick a Bar Color for Index", "#2ca02c")
             orientation = st.radio("Choose Chart Orientation", ["Vertical", "Horizontal"])
 
-            chart_title = st.text_input("Edit Bar Chart Title", value="Bar Chart Visualization")
-            legend_labels = {
-                "cut_percentage": st.text_input("Edit Legend Label for Data Cut Percentages", value="Data Cut Percentages"),
-                "avg_yes": st.text_input("Edit Legend Label for Total Sample Percentages", value="Total Sample Percentages"),
-                "index": st.text_input("Edit Legend Label for Index", value="Index")
-            }
-
             if selected_answers:
-                # Get corresponding question_code for selected answers
                 selected_question_codes = question_df[
                     question_df['dropdown_label'].isin(selected_answers)
                 ]['question_code'].tolist()
 
-                # Filter data based on selected answers' question_codes
                 filtered_df = df[df['question_code'].isin(selected_question_codes)]
 
                 plot_bar_chart_with_editable_labels(
@@ -278,9 +269,7 @@ def main():
                     bar_color_cut,
                     bar_color_yes,
                     bar_color_index,
-                    orientation,
-                    chart_title,
-                    legend_labels
+                    orientation
                 )
             else:
                 st.write("Please select answers to display the bar chart.")
