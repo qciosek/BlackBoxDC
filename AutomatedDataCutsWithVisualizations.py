@@ -24,19 +24,26 @@ def fetch_data_and_sample_size(connection, selected_questions):
     question_code_filter = "', '".join(selected_questions)
 
     if question_code_filter:
+        # Calculate the sample size: Participants who said "Yes" to all selected questions
         sample_size_query = f"""
         SELECT COUNT(DISTINCT participant_id) AS sample_size
-        FROM responses
-        WHERE response_text = 'Yes'
-        AND question_code IN ('{question_code_filter}')
+        FROM (
+            SELECT participant_id
+            FROM responses
+            WHERE response_text = 'Yes'
+            AND question_code IN ('{question_code_filter}')
+            GROUP BY participant_id
+            HAVING COUNT(DISTINCT question_code) = {len(selected_questions)}
+        ) AS filtered_participants
         """
     else:
-        sample_size_query = "SELECT COUNT(DISTINCT participant_id) AS sample_size FROM responses WHERE response_text = 'Yes'"
+        sample_size_query = "SELECT 0 AS sample_size"
 
     sample_size_df = pd.read_sql(sample_size_query, connection)
     sample_size = sample_size_df['sample_size'][0] if not sample_size_df.empty else 0
 
     if question_code_filter:
+        # Main query for data
         query = f"""
         WITH filtered_responses AS (
             SELECT participant_id
@@ -194,7 +201,7 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
 
 # Main function
 def main():
-    st.title("World’s Greatest data from Olympics Fandom Study")
+    st.title("World’s Greatest Data from Olympics Fandom Study")
 
     connection = connect_to_db()
     question_query = """
