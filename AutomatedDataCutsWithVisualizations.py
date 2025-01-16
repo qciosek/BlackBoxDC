@@ -84,7 +84,7 @@ def fetch_data_and_sample_size(connection, selected_questions):
         FROM cut_percentage cp
         JOIN average_answer aa ON cp.question_code = aa.question_code
         JOIN question_mapping qm ON cp.question_code = qm.question_code
-        ORDER BY question_text, answer_text;
+        ORDER BY CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(qm.question_code, 'Q', -1), '_', 1) AS UNSIGNED), qm.question_code;
         """
     else:
         query = "SELECT * FROM responses WHERE 1=0"
@@ -207,7 +207,7 @@ def main():
     question_query = """
     SELECT question_code, answer_text, question_text 
     FROM question_mapping
-    ORDER BY answer_text, question_code
+    ORDER BY CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(question_code, 'Q', -1), '_', 1) AS UNSIGNED), question_code
     """
     question_df = pd.read_sql(question_query, connection)
 
