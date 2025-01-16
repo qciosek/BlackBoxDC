@@ -194,7 +194,7 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
 
 # Main function
 def main():
-    st.title("Fetch and Download Data with Editable Bar Chart")
+    st.title("World’s Greatest proprietary data Olympic/Paralympic Fandom Study")
 
     connection = connect_to_db()
     question_query = """
