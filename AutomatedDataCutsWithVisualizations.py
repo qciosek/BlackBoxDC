@@ -91,7 +91,7 @@ def fetch_data_and_sample_size(connection, selected_questions):
     return df, sample_size
 
 # Plot bar chart with editable labels
-def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, display_avg_yes, display_index, bar_color_cut, bar_color_yes, bar_color_index, orientation):
+def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, display_avg_yes, display_index, bar_color_cut, bar_color_yes, bar_color_index, orientation, chart_title, legend_labels):
     st.subheader("Edit Labels for the Bar Chart")
 
     # Editable labels
@@ -143,9 +143,9 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
     if orientation == "Vertical":
         bar_shift = -bar_width * (num_metrics // 2)
         for metric, display, color, label in [
-            ("cutpercentage_numeric", display_cut_percentage, bar_color_cut, "Data Cut Percentages"),
-            ("avg_yes_percentage_numeric", display_avg_yes, bar_color_yes, "Total Sample Percentages"),
-            ("index", display_index, bar_color_index, "Index"),
+            ("cutpercentage_numeric", display_cut_percentage, bar_color_cut, legend_labels["cut_percentage"]),
+            ("avg_yes_percentage_numeric", display_avg_yes, bar_color_yes, legend_labels["avg_yes"]),
+            ("index", display_index, bar_color_index, legend_labels["index"]),
         ]:
             if display:
                 ax.bar(
@@ -161,15 +161,15 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
                 bar_shift += bar_width
 
         ax.set_ylabel("Percentage")
-        ax.set_title("Bar Chart Visualization")
+        ax.set_title(chart_title)
         plt.xticks(x_pos, filtered_df["wrapped_text"], rotation=45, ha="right")
 
     else:  # Horizontal orientation
         bar_shift = -bar_width * (num_metrics // 2)
         for metric, display, color, label in [
-            ("cutpercentage_numeric", display_cut_percentage, bar_color_cut, "Data Cut Percentages"),
-            ("avg_yes_percentage_numeric", display_avg_yes, bar_color_yes, "Total Sample Percentages"),
-            ("index", display_index, bar_color_index, "Index"),
+            ("cutpercentage_numeric", display_cut_percentage, bar_color_cut, legend_labels["cut_percentage"]),
+            ("avg_yes_percentage_numeric", display_avg_yes, bar_color_yes, legend_labels["avg_yes"]),
+            ("index", display_index, bar_color_index, legend_labels["index"]),
         ]:
             if display:
                 ax.barh(
@@ -185,7 +185,7 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
                 bar_shift += bar_width
 
         ax.set_xlabel("Percentage")
-        ax.set_title("Bar Chart Visualization")
+        ax.set_title(chart_title)
         plt.yticks(x_pos, filtered_df["wrapped_text"])
 
     ax.set_ylim(0, y_limit) if orientation == "Vertical" else ax.set_xlim(0, y_limit)
@@ -254,6 +254,13 @@ def main():
             bar_color_index = st.color_picker("Pick a Bar Color for Index", "#2ca02c")
             orientation = st.radio("Choose Chart Orientation", ["Vertical", "Horizontal"])
 
+            chart_title = st.text_input("Edit Bar Chart Title", value="Bar Chart Visualization")
+            legend_labels = {
+                "cut_percentage": st.text_input("Edit Legend Label for Data Cut Percentages", value="Data Cut Percentages"),
+                "avg_yes": st.text_input("Edit Legend Label for Total Sample Percentages", value="Total Sample Percentages"),
+                "index": st.text_input("Edit Legend Label for Index", value="Index")
+            }
+
             if selected_answers:
                 # Get corresponding question_code for selected answers
                 selected_question_codes = question_df[
@@ -271,7 +278,9 @@ def main():
                     bar_color_cut,
                     bar_color_yes,
                     bar_color_index,
-                    orientation
+                    orientation,
+                    chart_title,
+                    legend_labels
                 )
             else:
                 st.write("Please select answers to display the bar chart.")
