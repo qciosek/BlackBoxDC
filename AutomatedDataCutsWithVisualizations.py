@@ -145,7 +145,7 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
     if display_index:
         y_max = max(y_max, filtered_df['index'].max())
 
-    y_limit = min(500, max(60, y_max + 10))
+    y_limit = min(500, max(60, y_max + 15))
 
     if orientation == "Vertical":
         bar_shift = -bar_width * (num_metrics // 2)
