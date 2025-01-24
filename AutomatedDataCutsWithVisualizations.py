@@ -5,7 +5,7 @@ import io
 import matplotlib.pyplot as plt
 import textwrap
 
-# Set Streamlit theme configuration
+# Set Streamlit page configuration
 st.set_page_config(
     page_title="Olympics Fandom Study",
     page_icon=":chart_with_upwards_trend:",  # You can customize this with any emoji
@@ -13,28 +13,34 @@ st.set_page_config(
     initial_sidebar_state="expanded",  # Can be "collapsed" or "expanded"
 )
 
-# Custom CSS for more style tweaks
-st.markdown("""
-    <style>
-        /* Change the primary color */
-        .css-1d391kg { background-color: #008080; }
+# Function to apply user-customized theme
+def apply_custom_theme():
+    # Get the user-selected theme options
+    background_color = st.sidebar.color_picker("Choose Background Color", "#f4f4f9")
+    text_color = st.sidebar.color_picker("Choose Text Color", "#000000")
+    button_color = st.sidebar.color_picker("Choose Button Color", "#ff7f0e")
 
-        /* Customize text style */
-        .css-1v3fvcr { font-family: 'Arial', sans-serif; }
+    # Custom CSS to apply the theme changes
+    st.markdown(f"""
+        <style>
+            body {{
+                background-color: {background_color};
+                color: {text_color};
+            }}
 
-        /* Customize button style */
-        .stButton>button {
-            background-color: #ff7f0e;
-            color: white;
-            font-weight: bold;
-        }
+            /* Customize button style */
+            .stButton>button {{
+                background-color: {button_color};
+                color: white;
+                font-weight: bold;
+            }}
 
-        /* Customize sidebar */
-        .css-1b7ki0p {
-            background-color: #f4f4f9;
-        }
-    </style>
-""", unsafe_allow_html=True)
+            /* Customize sidebar */
+            .css-1b7ki0p {{
+                background-color: {background_color};
+            }}
+        </style>
+    """, unsafe_allow_html=True)
 
 # Clear Streamlit cache
 st.cache_data.clear()
@@ -231,6 +237,9 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
 # Main function
 def main():
     st.title("World’s Greatest Data from Olympics Fandom Study")
+
+    # Apply custom theme
+    apply_custom_theme()
 
     connection = connect_to_db()
     question_query = """
