@@ -40,6 +40,8 @@ def fetch_data_and_sample_size(connection, selected_questions):
     else:
         sample_size_query = "SELECT 0 AS sample_size"
 
+    print(f"Sample Size Query: {sample_size_query}")  # Debugging line
+    
     # Run the sample size query
     sample_size_df = pd.read_sql(sample_size_query, connection)
     sample_size = sample_size_df['sample_size'][0] if not sample_size_df.empty else 0
@@ -91,6 +93,8 @@ def fetch_data_and_sample_size(connection, selected_questions):
     else:
         query = "SELECT * FROM responses WHERE 1=0"
 
+    print(f"Main Query: {query}")  # Debugging line
+    
     # Run the main query
     df = pd.read_sql(query, connection)
 
@@ -254,36 +258,17 @@ def main():
             display_cut_percentage = st.checkbox("Display Data Cut Percentages", value=True)
             display_index = st.checkbox("Display Index", value=False)
 
-            selected_answers = st.multiselect(
-                "Select answers to display in the bar chart:",
-                question_df['dropdown_label'].tolist(),
+            bar_color_cut = st.color_picker("Pick Data Cut Percentages Bar Color", "#4287f5")
+            bar_color_yes = st.color_picker("Pick Total Sample Percentages Bar Color", "#42f554")
+            bar_color_index = st.color_picker("Pick Index Bar Color", "#f54242")
+
+            orientation = st.radio("Select Bar Chart Orientation", ("Vertical", "Horizontal"))
+
+            plot_bar_chart_with_editable_labels(
+                df, display_cut_percentage, display_avg_yes, display_index, bar_color_cut, bar_color_yes, bar_color_index, orientation
             )
-
-            bar_color_cut = st.color_picker("Pick a Bar Color for Data Cut Percentages", "#1f77b4")
-            bar_color_yes = st.color_picker("Pick a Bar Color for Total Sample Percentages", "#ff7f0e")
-            bar_color_index = st.color_picker("Pick a Bar Color for Index", "#2ca02c")
-            orientation = st.radio("Choose Chart Orientation", ["Vertical", "Horizontal"])
-
-            if selected_answers:
-                selected_question_codes = question_df[
-                    question_df['dropdown_label'].isin(selected_answers)
-                ]['question_code'].tolist()
-                filtered_df = df[df['question_code'].isin(selected_question_codes)]
-
-                plot_bar_chart_with_editable_labels(
-                    filtered_df, 
-                    display_cut_percentage, 
-                    display_avg_yes, 
-                    display_index, 
-                    bar_color_cut, 
-                    bar_color_yes, 
-                    bar_color_index, 
-                    orientation
-                )
-        else:
-            st.write("No data available for the selected questions.")
     else:
-        st.write("Please select at least one question.")
+        st.write("No questions selected.")
 
 if __name__ == "__main__":
     main()
