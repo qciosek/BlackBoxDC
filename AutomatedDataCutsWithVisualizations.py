@@ -5,6 +5,37 @@ import io
 import matplotlib.pyplot as plt
 import textwrap
 
+# Set Streamlit theme configuration
+st.set_page_config(
+    page_title="Olympics Fandom Study",
+    page_icon=":chart_with_upwards_trend:",  # You can customize this with any emoji
+    layout="centered",  # "centered" or "wide"
+    initial_sidebar_state="expanded",  # Can be "collapsed" or "expanded"
+)
+
+# Custom CSS for more style tweaks
+st.markdown("""
+    <style>
+        /* Change the primary color */
+        .css-1d391kg { background-color: #008080; }
+
+        /* Customize text style */
+        .css-1v3fvcr { font-family: 'Arial', sans-serif; }
+
+        /* Customize button style */
+        .stButton>button {
+            background-color: #ff7f0e;
+            color: white;
+            font-weight: bold;
+        }
+
+        /* Customize sidebar */
+        .css-1b7ki0p {
+            background-color: #f4f4f9;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
 # Clear Streamlit cache
 st.cache_data.clear()
 
@@ -89,7 +120,6 @@ def fetch_data_and_sample_size(connection, selected_questions):
     else:
         query = "SELECT * FROM responses WHERE 1=0"
             
-
     df = pd.read_sql(query, connection)
     return df, sample_size
 
@@ -149,7 +179,6 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
   
     y_limit = min(500, max(60, y_max + 15))
 
-   
     if orientation == "Vertical":
         bar_shift = -bar_width * (num_metrics // 2)
         for metric, display, color, label in [
