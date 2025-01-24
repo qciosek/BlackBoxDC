@@ -10,48 +10,51 @@ st.cache_data.clear()
 
 # Connect to the MySQL database
 def connect_to_db():
-    connection = pymysql.connect(
-        host='database-1.c5isyysu810z.us-east-2.rds.amazonaws.com',
-        user='admin',
-        password='Omega1745!',
-        database='study_data',
-        port=3306,
-    )
-    return connection
+    try:
+        connection = pymysql.connect(
+            host='database-1.c5isyysu810z.us-east-2.rds.amazonaws.com',
+            user='admin',
+            password='Omega1745!',
+            database='study_data',
+            port=3306,
+        )
+        return connection
+    except pymysql.MySQLError as e:
+        st.error(f"Error connecting to database: {e}")
+        return None
 
 # Fetch data and sample size
 def fetch_data_and_sample_size(connection, selected_questions):
-    question_code_filter = "', '".join(selected_questions)
+    if not selected_questions:
+        return pd.DataFrame(), 0  # Return empty DataFrame and sample size of 0
 
-    if question_code_filter:
+    question_code_filter = tuple(selected_questions)  # Use a tuple for parameterized queries
+
+    try:
         # Calculate the sample size: Participants who said "Yes" to all selected questions
-        sample_size_query = f"""
+        sample_size_query = """
         SELECT COUNT(DISTINCT participant_id) AS sample_size
         FROM (
             SELECT participant_id
             FROM responses
             WHERE response_text = 'Yes'
-            AND question_code IN ('{question_code_filter}')
+            AND question_code IN (%s)
             GROUP BY participant_id
-            HAVING COUNT(DISTINCT question_code) = {len(selected_questions)}
+            HAVING COUNT(DISTINCT question_code) = %s
         ) AS filtered_participants
         """
-    else:
-        sample_size_query = "SELECT 0 AS sample_size"
+        sample_size_df = pd.read_sql(sample_size_query, connection, params=(question_code_filter, len(selected_questions)))
+        sample_size = sample_size_df['sample_size'][0] if not sample_size_df.empty else 0
 
-    sample_size_df = pd.read_sql(sample_size_query, connection)
-    sample_size = sample_size_df['sample_size'][0] if not sample_size_df.empty else 0
-
-    if question_code_filter:
         # Main query for data
-        query = f"""
+        query = """
         WITH filtered_responses AS (
             SELECT participant_id
             FROM responses
             WHERE response_text = 'Yes' 
-            AND question_code IN ('{question_code_filter}')
+            AND question_code IN (%s)
             GROUP BY participant_id
-            HAVING COUNT(DISTINCT question_code) = {len(selected_questions)}
+            HAVING COUNT(DISTINCT question_code) = %s
         ),
         cut_percentage AS (
             SELECT 
@@ -86,12 +89,12 @@ def fetch_data_and_sample_size(connection, selected_questions):
         JOIN question_mapping qm ON cp.question_code = qm.question_code
         ORDER BY CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(qm.question_code, 'Q', -1), '_', 1) AS UNSIGNED), qm.question_code;
         """
-    else:
-        query = "SELECT * FROM responses WHERE 1=0"
+        df = pd.read_sql(query, connection, params=(question_code_filter, len(selected_questions)))
 
-    df = pd.read_sql(query, connection)
-
-    return df, sample_size
+        return df, sample_size
+    except pymysql.MySQLError as e:
+        st.error(f"Error executing query: {e}")
+        return pd.DataFrame(), 0
 
 # Plot bar chart with editable labels
 def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, display_avg_yes, display_index, bar_color_cut, bar_color_yes, bar_color_index, orientation):
@@ -204,6 +207,9 @@ def main():
     st.title("World’s Greatest Data from Olympics Fandom Study")
 
     connection = connect_to_db()
+    if connection is None:
+        return  # Exit if database connection failed
+
     question_query = """
     SELECT question_code, answer_text, question_text 
     FROM question_mapping
@@ -287,3 +293,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
