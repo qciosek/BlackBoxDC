@@ -21,68 +21,76 @@ def connect_to_db():
 
 # Fetch data and sample size
 def fetch_data_and_sample_size(connection, selected_questions):
-    question_code_filter = ", ".join([f"'{q}'" for q in selected_questions])
+    question_code_filter = "', '".join(selected_questions)
 
-    # Calculate the sample size
-    sample_size_query = f"""
-    SELECT COUNT(DISTINCT participant_id) AS sample_size
-    FROM (
-        SELECT participant_id
-        FROM responses
-        WHERE response_text = 'Yes'
-        AND question_code IN ({question_code_filter})
-        GROUP BY participant_id
-        HAVING COUNT(DISTINCT question_code) = {len(selected_questions)}
-    ) AS filtered_participants
-    """
+    if question_code_filter:
+        # Calculate the sample size: Participants who said "Yes" to all selected questions
+        sample_size_query = f"""
+        SELECT COUNT(DISTINCT participant_id) AS sample_size
+        FROM (
+            SELECT participant_id
+            FROM responses
+            WHERE response_text = 'Yes'
+            AND question_code IN ('{question_code_filter}')
+            GROUP BY participant_id
+            HAVING COUNT(DISTINCT question_code) = {len(selected_questions)}
+        ) AS filtered_participants
+        """
+    else:
+        sample_size_query = "SELECT 0 AS sample_size"
+
     sample_size_df = pd.read_sql(sample_size_query, connection)
     sample_size = sample_size_df['sample_size'][0] if not sample_size_df.empty else 0
 
-    # Main query for data
-    query = f"""
-    WITH filtered_responses AS (
-        SELECT participant_id
-        FROM responses
-        WHERE response_text = 'Yes' 
-        AND question_code IN ({question_code_filter})
-        GROUP BY participant_id
-        HAVING COUNT(DISTINCT question_code) = {len(selected_questions)}
-    ),
-    cut_percentage AS (
+    if question_code_filter:
+        # Main query for data
+        query = f"""
+        WITH filtered_responses AS (
+            SELECT participant_id
+            FROM responses
+            WHERE response_text = 'Yes' 
+            AND question_code IN ('{question_code_filter}')
+            GROUP BY participant_id
+            HAVING COUNT(DISTINCT question_code) = {len(selected_questions)}
+        ),
+        cut_percentage AS (
+            SELECT 
+                question_code,
+                ROUND(COUNT(CASE WHEN response_text = 'Yes' THEN 1 END) * 100.0 / COUNT(*)) AS cutpercentage
+            FROM filtered_responses fr
+            JOIN responses r ON fr.participant_id = r.participant_id
+            GROUP BY question_code
+        ),
+        average_answer AS (
+            SELECT
+                question_code,
+                ROUND(AVG(CASE WHEN response_text = 'Yes' THEN 1 ELSE 0 END) * 100.0) AS avg_yes_percentage
+            FROM responses
+            GROUP BY question_code
+        )
         SELECT 
-            question_code,
-            ROUND(COUNT(CASE WHEN response_text = 'Yes' THEN 1 END) * 100.0 / COUNT(*)) AS cutpercentage
-        FROM filtered_responses fr
-        JOIN responses r ON fr.participant_id = r.participant_id
-        GROUP BY question_code
-    ),
-    average_answer AS (
-        SELECT
-            question_code,
-            ROUND(AVG(CASE WHEN response_text = 'Yes' THEN 1 ELSE 0 END) * 100.0) AS avg_yes_percentage
-        FROM responses
-        GROUP BY question_code
-    )
-    SELECT 
-        qm.question_code, 
-        CASE 
-            WHEN LENGTH(qm.question_text) > 60 THEN CONCAT(LEFT(qm.question_text, 60), '...')
-            ELSE qm.question_text
-        END AS question_text,
-        qm.answer_text AS answer_text,
-        CONCAT(cp.cutpercentage, '%') AS cutpercentage,
-        CONCAT(aa.avg_yes_percentage, '%') AS avg_yes_percentage,
-        CASE 
-            WHEN aa.avg_yes_percentage = 0 THEN NULL
-            ELSE ROUND((cp.cutpercentage / aa.avg_yes_percentage) * 100)
-        END AS `index`
-    FROM cut_percentage cp
-    JOIN average_answer aa ON cp.question_code = aa.question_code
-    JOIN question_mapping qm ON cp.question_code = qm.question_code
-    ORDER BY CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(qm.question_code, 'Q', -1), '_', 1) AS UNSIGNED), qm.question_code;
-    """
+            qm.question_code, 
+            CASE 
+                WHEN LENGTH(qm.question_text) > 60 THEN CONCAT(LEFT(qm.question_text, 60), '...')
+                ELSE qm.question_text
+            END AS question_text,
+            qm.answer_text AS answer_text,
+            CONCAT(cp.cutpercentage, '%') AS cutpercentage,
+            CONCAT(aa.avg_yes_percentage, '%') AS avg_yes_percentage,
+            CASE 
+                WHEN aa.avg_yes_percentage = 0 THEN NULL
+                ELSE ROUND((cp.cutpercentage / aa.avg_yes_percentage) * 100)
+            END AS index
+        FROM cut_percentage cp
+        JOIN average_answer aa ON cp.question_code = aa.question_code
+        JOIN question_mapping qm ON cp.question_code = qm.question_code
+        ORDER BY CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(qm.question_code, 'Q', -1), '_', 1) AS UNSIGNED), qm.question_code;
+        """
+    else:
+        query = "SELECT * FROM responses WHERE 1=0"
 
     df = pd.read_sql(query, connection)
+
     return df, sample_size
 
 # Plot bar chart with editable labels
@@ -98,10 +106,15 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
     legend_index = st.text_input("Legend for Index", value="Index")
 
     # Editable bar labels
-    edited_labels = [
-        st.text_input(f"Edit label for '{row['answer_text']}'", value=row['answer_text'], key=f"label_input_{i}")
-        for i, row in filtered_df.iterrows()
-    ]
+    edited_labels = []
+    for i, row in filtered_df.iterrows():
+        edited_label = st.text_input(
+            f"Edit label for '{row['answer_text']}'", 
+            value=row['answer_text'],
+            key=f"label_input_{i}"
+        )
+        edited_labels.append(edited_label)
+
     filtered_df["edited_text"] = edited_labels
 
     max_chars_per_line = 30
@@ -109,7 +122,6 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
         lambda text: textwrap.fill(text, width=max_chars_per_line)
     )
 
-    # Sorting by selected metric
     sort_column = None
     if display_cut_percentage:
         sort_column = 'cutpercentage_numeric'
@@ -120,22 +132,23 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
 
     filtered_df.sort_values(by=sort_column, ascending=True, inplace=True)
 
-    # Plot configuration
     num_metrics = sum([display_avg_yes, display_cut_percentage, display_index])
     bar_width = 0.7 / num_metrics
     fig, ax = plt.subplots(figsize=(10, 6))
     x_pos = range(len(filtered_df))
 
-    y_max = max([
-        filtered_df[metric].max()
-        for metric in ['cutpercentage_numeric', 'avg_yes_percentage_numeric', 'index']
-        if metric in filtered_df.columns
-    ])
+    y_max = 0
+    if display_cut_percentage:
+        y_max = max(y_max, filtered_df['cutpercentage_numeric'].max())
+    if display_avg_yes:
+        y_max = max(y_max, filtered_df['avg_yes_percentage_numeric'].max())
+    if display_index:
+        y_max = max(y_max, filtered_df['index'].max())
+
     y_limit = min(500, max(60, y_max + 15))
 
-    bar_shift = -bar_width * (num_metrics // 2)
-
     if orientation == "Vertical":
+        bar_shift = -bar_width * (num_metrics // 2)
         for metric, display, color, label in [
             ("cutpercentage_numeric", display_cut_percentage, bar_color_cut, legend_cut_percentage),
             ("avg_yes_percentage_numeric", display_avg_yes, bar_color_yes, legend_avg_yes),
@@ -149,11 +162,17 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
                     label=label,
                     color=color,
                 )
+                for i, v in enumerate(filtered_df[metric]):
+                    ax.text(i + bar_shift, v + 1, f"{v:.0f}%" if metric != "index" else f"{v:.0f}", ha="center", fontsize=9)
+
                 bar_shift += bar_width
 
         ax.set_ylabel("Percentage")
+        ax.set_title(chart_title)
         plt.xticks(x_pos, filtered_df["wrapped_text"], rotation=45, ha="right")
+
     else:
+        bar_shift = -bar_width * (num_metrics // 2)
         for metric, display, color, label in [
             ("cutpercentage_numeric", display_cut_percentage, bar_color_cut, legend_cut_percentage),
             ("avg_yes_percentage_numeric", display_avg_yes, bar_color_yes, legend_avg_yes),
@@ -167,9 +186,13 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
                     label=label,
                     color=color,
                 )
+                for i, v in enumerate(filtered_df[metric]):
+                    ax.text(v + 1, i + bar_shift, f"{v:.0f}%" if metric != "index" else f"{v:.0f}", va="center", fontsize=9)
+
                 bar_shift += bar_width
 
         ax.set_xlabel("Percentage")
+        ax.set_title(chart_title)
         plt.yticks(x_pos, filtered_df["wrapped_text"])
 
     ax.set_ylim(0, y_limit) if orientation == "Vertical" else ax.set_xlim(0, y_limit)
@@ -213,6 +236,7 @@ def main():
 
             csv_buffer = io.StringIO()
             df.to_csv(csv_buffer, index=False)
+            csv_buffer.seek(0)
 
             st.download_button(
                 label="Download CSV",
