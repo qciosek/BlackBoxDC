@@ -21,9 +21,7 @@ def connect_to_db():
 
 # Fetch data and sample size
 def fetch_data_and_sample_size(connection, selected_questions):
-    # Join selected questions into a comma-separated string
     question_code_filter = "', '".join(selected_questions)
-
     if question_code_filter:
         # Calculate the sample size: Participants who said "Yes" to all selected questions
         sample_size_query = f"""
@@ -39,10 +37,7 @@ def fetch_data_and_sample_size(connection, selected_questions):
         """
     else:
         sample_size_query = "SELECT 0 AS sample_size"
-
-    print(f"Sample Size Query: {sample_size_query}")  # Debugging line
-    
-    # Run the sample size query
+   
     sample_size_df = pd.read_sql(sample_size_query, connection)
     sample_size = sample_size_df['sample_size'][0] if not sample_size_df.empty else 0
 
@@ -72,6 +67,7 @@ def fetch_data_and_sample_size(connection, selected_questions):
             FROM responses
             GROUP BY question_code
         )
+    
         SELECT 
             qm.question_code, 
             CASE 
@@ -84,7 +80,7 @@ def fetch_data_and_sample_size(connection, selected_questions):
             CASE 
                 WHEN aa.avg_yes_percentage = 0 THEN NULL
                 ELSE ROUND((cp.cutpercentage / aa.avg_yes_percentage) * 100)
-            END AS index
+            END AS `index`
         FROM cut_percentage cp
         JOIN average_answer aa ON cp.question_code = aa.question_code
         JOIN question_mapping qm ON cp.question_code = qm.question_code
@@ -92,12 +88,9 @@ def fetch_data_and_sample_size(connection, selected_questions):
         """
     else:
         query = "SELECT * FROM responses WHERE 1=0"
+            
 
-    print(f"Main Query: {query}")  # Debugging line
-    
-    # Run the main query
     df = pd.read_sql(query, connection)
-
     return df, sample_size
 
 # Plot bar chart with editable labels
@@ -121,7 +114,7 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
             key=f"label_input_{i}"
         )
         edited_labels.append(edited_label)
-
+ 
     filtered_df["edited_text"] = edited_labels
 
     max_chars_per_line = 30
@@ -129,6 +122,7 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
         lambda text: textwrap.fill(text, width=max_chars_per_line)
     )
 
+    # Sorting by selected metric
     sort_column = None
     if display_cut_percentage:
         sort_column = 'cutpercentage_numeric'
@@ -139,6 +133,7 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
 
     filtered_df.sort_values(by=sort_column, ascending=True, inplace=True)
 
+    # Plot configuration
     num_metrics = sum([display_avg_yes, display_cut_percentage, display_index])
     bar_width = 0.7 / num_metrics
     fig, ax = plt.subplots(figsize=(10, 6))
@@ -151,9 +146,10 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
         y_max = max(y_max, filtered_df['avg_yes_percentage_numeric'].max())
     if display_index:
         y_max = max(y_max, filtered_df['index'].max())
-
+  
     y_limit = min(500, max(60, y_max + 15))
 
+   
     if orientation == "Vertical":
         bar_shift = -bar_width * (num_metrics // 2)
         for metric, display, color, label in [
@@ -171,13 +167,11 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
                 )
                 for i, v in enumerate(filtered_df[metric]):
                     ax.text(i + bar_shift, v + 1, f"{v:.0f}%" if metric != "index" else f"{v:.0f}", ha="center", fontsize=9)
-
                 bar_shift += bar_width
 
         ax.set_ylabel("Percentage")
         ax.set_title(chart_title)
         plt.xticks(x_pos, filtered_df["wrapped_text"], rotation=45, ha="right")
-
     else:
         bar_shift = -bar_width * (num_metrics // 2)
         for metric, display, color, label in [
@@ -195,7 +189,6 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
                 )
                 for i, v in enumerate(filtered_df[metric]):
                     ax.text(v + 1, i + bar_shift, f"{v:.0f}%" if metric != "index" else f"{v:.0f}", va="center", fontsize=9)
-
                 bar_shift += bar_width
 
         ax.set_xlabel("Percentage")
@@ -258,17 +251,39 @@ def main():
             display_cut_percentage = st.checkbox("Display Data Cut Percentages", value=True)
             display_index = st.checkbox("Display Index", value=False)
 
-            bar_color_cut = st.color_picker("Pick Data Cut Percentages Bar Color", "#4287f5")
-            bar_color_yes = st.color_picker("Pick Total Sample Percentages Bar Color", "#42f554")
-            bar_color_index = st.color_picker("Pick Index Bar Color", "#f54242")
-
-            orientation = st.radio("Select Bar Chart Orientation", ("Vertical", "Horizontal"))
-
-            plot_bar_chart_with_editable_labels(
-                df, display_cut_percentage, display_avg_yes, display_index, bar_color_cut, bar_color_yes, bar_color_index, orientation
+            selected_answers = st.multiselect(
+                "Select answers to display in the bar chart:",
+                question_df['dropdown_label'].tolist(),
             )
+
+            bar_color_cut = st.color_picker("Pick a Bar Color for Data Cut Percentages", "#1f77b4")
+            bar_color_yes = st.color_picker("Pick a Bar Color for Total Sample Percentages", "#ff7f0e")
+            bar_color_index = st.color_picker("Pick a Bar Color for Index", "#2ca02c")
+            orientation = st.radio("Choose Chart Orientation", ["Vertical", "Horizontal"])
+
+            if selected_answers:
+                selected_question_codes = question_df[
+                    question_df['dropdown_label'].isin(selected_answers)
+                ]['question_code'].tolist()
+
+                filtered_df = df[df['question_code'].isin(selected_question_codes)]
+
+                plot_bar_chart_with_editable_labels(
+                    filtered_df,
+                    display_cut_percentage,
+                    display_avg_yes,
+                    display_index,
+                    bar_color_cut,
+                    bar_color_yes,
+                    bar_color_index,
+                    orientation
+                )
+            else:
+                st.write("Please select answers to display the bar chart.")
+        else:
+            st.write("No data found for the selected questions.")
     else:
-        st.write("No questions selected.")
+        st.write("Please select questions to fetch data.")
 
 if __name__ == "__main__":
     main()
