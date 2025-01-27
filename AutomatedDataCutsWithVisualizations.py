@@ -60,13 +60,13 @@ def connect_to_db():
 def fetch_data_and_sample_size(connection, selected_questions):
     question_code_filter = "', '".join(selected_questions)
     if question_code_filter:
-        # Calculate the sample size: Participants who said "Yes" to all selected questions
+        # Calculate the sample size: Participants who said "Yes" or "yes" to all selected questions
         sample_size_query = f"""
         SELECT COUNT(DISTINCT participant_id) AS sample_size
         FROM (
             SELECT participant_id
             FROM responses
-            WHERE response_text = 'Yes'
+            WHERE LOWER(response_text) = 'yes'
             AND question_code IN ('{question_code_filter}')
             GROUP BY participant_id
             HAVING COUNT(DISTINCT question_code) = {len(selected_questions)}
@@ -84,7 +84,7 @@ def fetch_data_and_sample_size(connection, selected_questions):
         WITH filtered_responses AS (
             SELECT participant_id
             FROM responses
-            WHERE response_text = 'Yes' 
+            WHERE LOWER(response_text) = 'yes'
             AND question_code IN ('{question_code_filter}')
             GROUP BY participant_id
             HAVING COUNT(DISTINCT question_code) = {len(selected_questions)}
@@ -92,7 +92,7 @@ def fetch_data_and_sample_size(connection, selected_questions):
         cut_percentage AS (
             SELECT 
                 question_code,
-                ROUND(COUNT(CASE WHEN response_text = 'Yes' THEN 1 END) * 100.0 / COUNT(*)) AS cutpercentage
+                ROUND(COUNT(CASE WHEN LOWER(response_text) = 'yes' THEN 1 END) * 100.0 / COUNT(*)) AS cutpercentage
             FROM filtered_responses fr
             JOIN responses r ON fr.participant_id = r.participant_id
             GROUP BY question_code
@@ -100,7 +100,7 @@ def fetch_data_and_sample_size(connection, selected_questions):
         average_answer AS (
             SELECT
                 question_code,
-                ROUND(AVG(CASE WHEN response_text = 'Yes' THEN 1 ELSE 0 END) * 100.0) AS avg_yes_percentage
+                ROUND(AVG(CASE WHEN LOWER(response_text) = 'yes' THEN 1 ELSE 0 END) * 100.0) AS avg_yes_percentage
             FROM responses
             GROUP BY question_code
         )
@@ -128,6 +128,9 @@ def fetch_data_and_sample_size(connection, selected_questions):
             
     df = pd.read_sql(query, connection)
     return df, sample_size
+
+# The rest of the code remains the same.
+
 
 # Plot bar chart with editable labels
 def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, display_avg_yes, display_index, bar_color_cut, bar_color_yes, bar_color_index, orientation):
