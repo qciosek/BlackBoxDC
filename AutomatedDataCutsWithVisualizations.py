@@ -8,19 +8,17 @@ import textwrap
 # Set Streamlit page configuration
 st.set_page_config(
     page_title="Olympics Fandom Study",
-    page_icon=":chart_with_upwards_trend:",  # You can customize this with any emoji
-    layout="centered",  # "centered" or "wide"
-    initial_sidebar_state="expanded",  # Can be "collapsed" or "expanded"
+    page_icon=":chart_with_upwards_trend:",
+    layout="centered",
+    initial_sidebar_state="expanded",
 )
 
 # Function to apply user-customized theme
 def apply_custom_theme():
-    # Get the user-selected theme options
     background_color = st.sidebar.color_picker("Choose Background Color", "#f4f4f9")
     text_color = st.sidebar.color_picker("Choose Text Color", "#000000")
     button_color = st.sidebar.color_picker("Choose Button Color", "#ff7f0e")
 
-    # Custom CSS to apply the theme changes
     st.markdown(f"""
         <style>
             body {{
@@ -28,14 +26,12 @@ def apply_custom_theme():
                 color: {text_color};
             }}
 
-            /* Customize button style */
             .stButton>button {{
                 background-color: {button_color};
                 color: white;
                 font-weight: bold;
             }}
 
-            /* Customize sidebar */
             .css-1b7ki0p {{
                 background-color: {background_color};
             }}
@@ -60,7 +56,7 @@ def connect_to_db():
 def fetch_data_and_sample_size(connection, selected_questions):
     question_code_filter = "', '".join(selected_questions)
     if question_code_filter:
-        # Calculate the sample size: Participants who said "Yes" or "yes" to all selected questions
+        # Calculate the sample size: Participants who said "Yes" to all selected questions
         sample_size_query = f"""
         SELECT COUNT(DISTINCT participant_id) AS sample_size
         FROM (
@@ -74,7 +70,7 @@ def fetch_data_and_sample_size(connection, selected_questions):
         """
     else:
         sample_size_query = "SELECT 0 AS sample_size"
-   
+
     sample_size_df = pd.read_sql(sample_size_query, connection)
     sample_size = sample_size_df['sample_size'][0] if not sample_size_df.empty else 0
 
@@ -92,7 +88,8 @@ def fetch_data_and_sample_size(connection, selected_questions):
         cut_percentage AS (
             SELECT 
                 question_code,
-                ROUND(COUNT(CASE WHEN LOWER(response_text) = 'yes' THEN 1 END) * 100.0 / COUNT(*)) AS cutpercentage
+                ROUND(COUNT(CASE WHEN LOWER(response_text) = 'yes' THEN 1 END) * 100.0 / 
+                      COUNT(CASE WHEN LOWER(response_text) IN ('yes', 'no') THEN 1 END)) AS cutpercentage
             FROM filtered_responses fr
             JOIN responses r ON fr.participant_id = r.participant_id
             GROUP BY question_code
@@ -102,6 +99,7 @@ def fetch_data_and_sample_size(connection, selected_questions):
                 question_code,
                 ROUND(AVG(CASE WHEN LOWER(response_text) = 'yes' THEN 1 ELSE 0 END) * 100.0) AS avg_yes_percentage
             FROM responses
+            WHERE LOWER(response_text) IN ('yes', 'no')
             GROUP BY question_code
         )
     
