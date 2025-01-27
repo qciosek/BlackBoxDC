@@ -95,14 +95,14 @@ def fetch_data_and_sample_size(connection, selected_questions):
                 ROUND(COUNT(CASE WHEN LOWER(response_text) = 'yes' THEN 1 END) * 100.0 / COUNT(*)) AS cutpercentage
             FROM filtered_responses fr
             JOIN responses r ON fr.participant_id = r.participant_id
-            GROUP BY participant_id, question_code
+            GROUP BY question_code
         ),
         average_answer AS (
             SELECT
                 question_code,
                 ROUND(AVG(CASE WHEN LOWER(response_text) = 'yes' THEN 1 ELSE 0 END) * 100.0) AS avg_yes_percentage
             FROM responses
-            GROUP BY participant_id, question_code
+            GROUP BY question_code
         )
     
         SELECT 
