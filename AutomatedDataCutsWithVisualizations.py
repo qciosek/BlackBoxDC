@@ -38,8 +38,7 @@ def apply_custom_theme():
         </style>
     """, unsafe_allow_html=True)
 
-# Clear Streamlit cache
-st.cache_data.clear()
+
 
 # Connect to the MySQL database
 def connect_to_db():
@@ -51,7 +50,8 @@ def connect_to_db():
         port=3306,
     )
     return connection
-
+# Clear Streamlit cache
+st.cache_data.clear()
 # Fetch data and sample size
 def fetch_data_and_sample_size(connection, selected_questions):
     question_code_filter = "', '".join(selected_questions)
