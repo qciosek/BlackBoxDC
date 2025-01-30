@@ -59,7 +59,7 @@ connection = connect_to_db()
 # Clear Streamlit cache
 st.cache_data.clear()
 # Fetch data and sample size
-@st.cache_data(ttl=0)  # Forces Streamlit to re-fetch data every time
+ # Forces Streamlit to re-fetch data every time
 def fetch_data_and_sample_size(connection, selected_questions):
 
     question_code_filter = "', '".join(selected_questions)
