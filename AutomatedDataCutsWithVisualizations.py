@@ -42,6 +42,11 @@ def apply_custom_theme():
 
 # Connect to the MySQL database
 def connect_to_db():
+    try:
+        connection.close()  # Close any existing connection
+    except:
+        pass  # Ignore error if no connection exists
+
     connection = pymysql.connect(
         host='database-1.c5isyysu810z.us-east-2.rds.amazonaws.com',
         user='admin',
@@ -50,6 +55,7 @@ def connect_to_db():
         port=3306,
     )
     return connection
+
 # Clear Streamlit cache
 st.cache_data.clear()
 # Fetch data and sample size
