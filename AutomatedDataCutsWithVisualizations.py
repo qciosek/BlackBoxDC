@@ -55,7 +55,7 @@ def connect_to_db():
         port=3306,
     )
     return connection
-
+connection = connect_to_db()
 # Clear Streamlit cache
 st.cache_data.clear()
 # Fetch data and sample size
