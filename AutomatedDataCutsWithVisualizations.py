@@ -263,7 +263,8 @@ def main():
     category_df = pd.read_sql(category_query, connection)
 
     # Add a dropdown to select the question category
-    category_selected = st.selectbox("Select a Question Category:", category_df['question_category'].tolist())
+    question_df['dropdown_label'] = question_df['answer_text'] + ", " + question_df['question_code'] + ", " + question_df['question_text']
+    question_options = ["No Answer"] + distinct_answers.tolist()
 
     # Fetch questions based on the selected category
     if category_selected:
