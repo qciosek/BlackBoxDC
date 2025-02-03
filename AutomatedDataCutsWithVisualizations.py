@@ -1,5 +1,7 @@
 import streamlit as st
 import pymysql
+import streamlit as st
+import pymysql
 import pandas as pd
 import io
 import matplotlib.pyplot as plt
@@ -38,14 +40,12 @@ def apply_custom_theme():
         </style>
     """, unsafe_allow_html=True)
 
-
-
 # Connect to the MySQL database
 def connect_to_db():
     try:
-        connection.close()  # Close any existing connection
+        connection.close()
     except:
-        pass  # Ignore error if no connection exists
+        pass
 
     connection = pymysql.connect(
         host='database-1.c5isyysu810z.us-east-2.rds.amazonaws.com',
@@ -55,16 +55,13 @@ def connect_to_db():
         port=3306,
     )
     return connection
-connection = connect_to_db()
-# Clear Streamlit cache
-st.cache_data.clear()
-# Fetch data and sample size
- # Forces Streamlit to re-fetch data every time
-def fetch_data_and_sample_size(connection, selected_questions):
 
+connection = connect_to_db()
+st.cache_data.clear()
+
+def fetch_data_and_sample_size(connection, selected_questions):
     question_code_filter = "', '".join(selected_questions)
     if question_code_filter:
-        # Calculate the sample size: Participants who said "Yes" to all selected questions
         sample_size_query = f"""
         SELECT COUNT(DISTINCT participant_id) AS sample_size
         FROM (
@@ -83,7 +80,6 @@ def fetch_data_and_sample_size(connection, selected_questions):
     sample_size = sample_size_df['sample_size'][0] if not sample_size_df.empty else 0
 
     if question_code_filter:
-        # Main query for data
         query = f"""
         WITH filtered_responses AS (
             SELECT participant_id
@@ -131,7 +127,7 @@ def fetch_data_and_sample_size(connection, selected_questions):
         """
     else:
         query = "SELECT * FROM responses WHERE 1=0"
-            
+    
     df = pd.read_sql(query, connection)
     return df, sample_size
 
@@ -246,27 +242,33 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
 # Main function
 def main():
     st.title("World’s Greatest Data from Olympics Fandom Study")
-
-    # Apply custom theme
     apply_custom_theme()
 
     connection = connect_to_db()
     question_query = """
-    SELECT question_code, answer_text, question_text 
+    SELECT question_code, answer_text, question_text, question_category 
     FROM question_mapping
     ORDER BY CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(question_code, 'Q', -1), '_', 1) AS UNSIGNED), question_code
     """
     question_df = pd.read_sql(question_query, connection)
 
-    question_df['dropdown_label'] = question_df['answer_text'] + ", " + question_df['question_code'] + ", " + question_df['question_text']
-    question_options = ["No Answer"] + question_df['dropdown_label'].tolist()
+    categories = ["All Categories"] + sorted(question_df['question_category'].dropna().unique().tolist())
+    selected_category = st.selectbox("Select a Question Category (Optional):", categories)
+
+    if selected_category == "All Categories":
+        filtered_df = question_df
+    else:
+        filtered_df = question_df[question_df['question_category'] == selected_category]
+
+    filtered_df['dropdown_label'] = filtered_df['answer_text'] + ", " + filtered_df['question_code'] + ", " + filtered_df['question_text']
+    question_options = ["No Answer"] + filtered_df['dropdown_label'].tolist()
 
     question_selected_1 = st.selectbox("Select a Question (Optional):", question_options)
     question_selected_2 = st.selectbox("Select a Second Question (Optional):", question_options)
     question_selected_3 = st.selectbox("Select a Third Question (Optional):", question_options)
 
     selected_questions = [
-        question_df[question_df['dropdown_label'] == q]['question_code'].values[0]
+        filtered_df[filtered_df['dropdown_label'] == q]['question_code'].values[0]
         for q in [question_selected_1, question_selected_2, question_selected_3]
         if q != "No Answer"
     ]
