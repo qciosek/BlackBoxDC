@@ -257,7 +257,7 @@ def main():
     # Fetch the available question categories
     category_query = """
     SELECT DISTINCT question_category
-    FROM question_mapping
+    FROM responses
     ORDER BY question_category;
     """
     category_df = pd.read_sql(category_query, connection)
