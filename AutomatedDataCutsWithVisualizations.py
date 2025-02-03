@@ -252,8 +252,6 @@ def main():
 
     connection = connect_to_db()
 
-    # **Insert the new code here for fetching categories and filtering questions**
-    
     # Fetch the available question categories
     category_query = """
     SELECT DISTINCT question_category
@@ -263,11 +261,10 @@ def main():
     category_df = pd.read_sql(category_query, connection)
 
     # Add a dropdown to select the question category
-    question_df['dropdown_label'] = question_df['answer_text'] + ", " + question_df['question_code'] + ", " + question_df['question_text']
-    question_options = ["No Answer"] + distinct_answers.tolist()
+    category_selected = st.selectbox("Select a Question Category:", category_df['question_category'].tolist())
 
-    # Fetch questions based on the selected category
     if category_selected:
+        # Fetch questions based on the selected category
         question_query = f"""
         SELECT question_code, answer_text, question_text, question_category 
         FROM responses
@@ -275,9 +272,11 @@ def main():
         ORDER BY CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(question_code, 'Q', -1), '_', 1) AS UNSIGNED), question_code
         """
         question_df = pd.read_sql(question_query, connection)
-        
+
+        # Fetch distinct answer_text for the dropdown menus
         distinct_answers = question_df['answer_text'].unique()
-        # Add dropdown options for questions related to the selected category
+
+        # Create dropdown options for the questions based on the selected category
         question_df['dropdown_label'] = question_df['answer_text'] + ", " + question_df['question_code'] + ", " + question_df['question_text']
         question_options = ["No Answer"] + question_df['dropdown_label'].tolist()
 
@@ -285,22 +284,13 @@ def main():
         question_selected_1 = st.selectbox("Select a Question (Optional):", question_options)
         question_selected_2 = st.selectbox("Select a Second Question (Optional):", question_options)
         question_selected_3 = st.selectbox("Select a Third Question (Optional):", question_options)
-    else:
-        st.write("Please select a question category to filter by.")
 
-    # **Continue with the existing code below:**
-
-    # Query for fetching the data and sample size
-    # This part remains the same
-    question_df = pd.read_sql(question_query, connection)
-    question_df['dropdown_label'] = question_df['answer_text'] + ", " + question_df['question_code'] + ", " + question_df['question_text']
-    question_options = ["No Answer"] + question_df['dropdown_label'].tolist()
-
-    selected_questions = [
-        question_df[question_df['dropdown_label'] == q]['question_code'].values[0]
-        for q in [question_selected_1, question_selected_2, question_selected_3]
-        if q != "No Answer"
-    ]
+        # Extract selected question codes
+        selected_questions = [
+            question_df[question_df['dropdown_label'] == q]['question_code'].values[0]
+            for q in [question_selected_1, question_selected_2, question_selected_3]
+            if q != "No Answer"
+        ]
     
     # The rest of the existing code continues as normal.
     if selected_questions:
