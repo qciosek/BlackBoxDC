@@ -39,7 +39,6 @@ def apply_custom_theme():
     """, unsafe_allow_html=True)
 
 
-
 # Connect to the MySQL database
 def connect_to_db():
     try:
@@ -56,15 +55,11 @@ def connect_to_db():
     )
     return connection
 connection = connect_to_db()
-# Clear Streamlit cache
-st.cache_data.clear()
-# Fetch data and sample size
- # Forces Streamlit to re-fetch data every time
-def fetch_data_and_sample_size(connection, selected_questions):
 
+# Fetch data and sample size
+def fetch_data_and_sample_size(connection, selected_questions):
     question_code_filter = "', '".join(selected_questions)
     if question_code_filter:
-        # Calculate the sample size: Participants who said "Yes" to all selected questions
         sample_size_query = f"""
         SELECT COUNT(DISTINCT participant_id) AS sample_size
         FROM (
@@ -83,7 +78,6 @@ def fetch_data_and_sample_size(connection, selected_questions):
     sample_size = sample_size_df['sample_size'][0] if not sample_size_df.empty else 0
 
     if question_code_filter:
-        # Main query for data
         query = f"""
         WITH filtered_responses AS (
             SELECT participant_id
@@ -134,8 +128,6 @@ def fetch_data_and_sample_size(connection, selected_questions):
             
     df = pd.read_sql(query, connection)
     return df, sample_size
-
-# The rest of the code remains the same.
 
 
 # Plot bar chart with editable labels
@@ -358,7 +350,6 @@ def main():
 
     else:
         st.write("Please select a question category to filter by.")
-
 
 
 if __name__ == "__main__":
