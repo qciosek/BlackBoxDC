@@ -273,11 +273,12 @@ def main():
         """
         question_df = pd.read_sql(question_query, connection)
 
-        # Fetch distinct question codes
-        distinct_question_codes = question_df['question_code'].unique()
+        # Fetch distinct combinations of question_code, answer_text, and question_text
+        distinct_questions = question_df[['question_code', 'answer_text', 'question_text']].drop_duplicates()
 
-        # Create dropdown options based on distinct question codes
-        question_options = ["No Answer"] + distinct_question_codes.tolist()
+        # Create dropdown options formatted as "question_code, answer_text, question_text"
+        distinct_questions['dropdown_label'] = distinct_questions['question_code'] + ", " + distinct_questions['answer_text'] + ", " + distinct_questions['question_text']
+        question_options = ["No Answer"] + distinct_questions['dropdown_label'].tolist()
 
         # Question dropdowns: Filtered based on the selected category
         question_selected_1 = st.selectbox("Select a Question (Optional):", question_options)
@@ -357,6 +358,7 @@ def main():
 
     else:
         st.write("Please select a question category to filter by.")
+
 
 
 if __name__ == "__main__":
