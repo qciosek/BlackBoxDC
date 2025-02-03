@@ -269,7 +269,7 @@ def main():
     if category_selected:
         question_query = f"""
         SELECT question_code, answer_text, question_text, question_category 
-        FROM question_mapping
+        FROM responses
         WHERE question_category = '{category_selected}'
         ORDER BY CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(question_code, 'Q', -1), '_', 1) AS UNSIGNED), question_code
         """
