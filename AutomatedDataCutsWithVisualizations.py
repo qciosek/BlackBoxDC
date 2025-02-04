@@ -248,28 +248,20 @@ def main():
     apply_custom_theme()
 
     connection = connect_to_db()
-
-    # Fetch categories
-    category_query = """
-    SELECT DISTINCT question_category FROM question_mapping
-    ORDER BY question_category
-    """
-    category_df = pd.read_sql(category_query, connection)
-    categories = ["All Categories"] + category_df['question_category'].tolist()
-
-    # Category dropdown
-    selected_category = st.selectbox("Select a Category:", categories)
-
-    # Fetch question data based on the selected category
-    question_query = f"""
-    SELECT question_code, answer_text, question_text 
+    
+    # Query to get all question data, including categories
+    question_query = """
+    SELECT question_code, answer_text, question_text, question_category 
     FROM question_mapping
-    WHERE question_category LIKE '{selected_category}' OR '{selected_category}' = 'All Categories'
     ORDER BY CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(question_code, 'Q', -1), '_', 1) AS UNSIGNED), question_code
     """
     question_df = pd.read_sql(question_query, connection)
 
+    # Prepare the dropdown options, including question category for display
     question_df['dropdown_label'] = question_df['answer_text'] + ", " + question_df['question_code'] + ", " + question_df['question_text']
+    question_df['dropdown_label_with_category'] = question_df['dropdown_label'] + " (" + question_df['question_category'] + ")"
+
+    # Main question selection dropdowns
     question_options = ["No Answer"] + question_df['dropdown_label'].tolist()
 
     question_selected_1 = st.selectbox("Select a Question (Optional):", question_options)
@@ -305,27 +297,32 @@ def main():
 
             st.subheader("Bar Chart Visualization")
 
+            # Bar chart settings
             display_avg_yes = st.checkbox("Display Total Sample Percentages", value=True)
             display_cut_percentage = st.checkbox("Display Data Cut Percentages", value=True)
             display_index = st.checkbox("Display Index", value=False)
 
+            # Now we populate the bar chart dropdown with all possible answers (no filtering)
+            bar_chart_options = question_df['dropdown_label_with_category'].tolist()
+
             selected_answers = st.multiselect(
                 "Select answers to display in the bar chart:",
-                question_df['dropdown_label'].tolist(),
+                bar_chart_options,  # Always show all answers
             )
 
-            bar_color_cut = st.color_picker("Pick a Bar Color for Data Cut Percentages", "#1f77b4")
-            bar_color_yes = st.color_picker("Pick a Bar Color for Total Sample Percentages", "#ff7f0e")
-            bar_color_index = st.color_picker("Pick a Bar Color for Index", "#2ca02c")
-            orientation = st.radio("Choose Chart Orientation", ["Vertical", "Horizontal"])
+            # If no answers are selected, show a message
+            if not selected_answers:
+                st.write("Please select at least one answer to display in the bar chart.")
 
+            # Process selected answers for the chart
             if selected_answers:
                 selected_question_codes = question_df[
-                    question_df['dropdown_label'].isin(selected_answers)
+                    question_df['dropdown_label_with_category'].isin(selected_answers)
                 ]['question_code'].tolist()
 
                 filtered_df = df[df['question_code'].isin(selected_question_codes)]
 
+                # Plot the bar chart with the selected data
                 plot_bar_chart_with_editable_labels(
                     filtered_df,
                     display_cut_percentage,
@@ -336,13 +333,11 @@ def main():
                     bar_color_index,
                     orientation
                 )
-            else:
-                st.write("Please select answers to display on the bar chart.")
-
         else:
-            st.write("No data found for selected questions.")
+            st.write("No data found for the selected questions.")
     else:
-        st.write("Please select at least one question.")
-    
+        st.write("Please select questions to fetch data.")
+
 if __name__ == "__main__":
     main()
+
