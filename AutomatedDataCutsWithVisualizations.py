@@ -277,7 +277,7 @@ def main():
         distinct_questions = question_df[['question_code', 'answer_text', 'question_text']].drop_duplicates()
 
         # Create dropdown options formatted as "question_code, answer_text, question_text"
-        distinct_questions['dropdown_label'] = distinct_questions['question_code']
+        distinct_questions['dropdown_label'] = distinct_questions['question_code'] + ", " + distinct_questions['answer_text'] + ", " + distinct_questions['question_text']
         question_options = ["No Answer"] + distinct_questions['dropdown_label'].tolist()
 
         # Question dropdowns: Filtered based on the selected category
