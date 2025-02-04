@@ -78,51 +78,59 @@ def fetch_data_and_sample_size(connection, selected_questions):
     sample_size = sample_size_df['sample_size'][0] if not sample_size_df.empty else 0
 
     if question_code_filter:
-        query = f"""
-        WITH filtered_responses AS (
-            SELECT participant_id
-            FROM responses
-            WHERE LOWER(response_text) = 'yes'
-            AND question_code IN ('{question_code_filter}')
-            GROUP BY participant_id
-            HAVING COUNT(DISTINCT question_code) = {len(selected_questions)}
-        ),
-        cut_percentage AS (
-            SELECT 
-                question_code,
-                ROUND(COUNT(CASE WHEN LOWER(response_text) = 'yes' THEN 1 END) * 100.0 / 
-                      COUNT(CASE WHEN LOWER(response_text) IN ('yes', 'no') THEN 1 END)) AS cutpercentage
-            FROM filtered_responses fr
-            JOIN responses r ON fr.participant_id = r.participant_id
-            GROUP BY question_code
-        ),
-        average_answer AS (
-            SELECT
-                question_code,
-                ROUND(AVG(CASE WHEN LOWER(response_text) = 'yes' THEN 1 ELSE 0 END) * 100.0) AS avg_yes_percentage
-            FROM responses
-            WHERE LOWER(response_text) IN ('yes', 'no')
-            GROUP BY question_code
-        )
-    
+    query = f"""
+    WITH relevant_responses AS (
+        SELECT *
+        FROM responses
+        WHERE question_code IN ('{question_code_filter}')
+    ),
+
+    filtered_participants AS (
+        SELECT participant_id
+        FROM relevant_responses
+        WHERE LOWER(response_text) = 'yes'
+        GROUP BY participant_id
+        HAVING COUNT(DISTINCT question_code) = {len(selected_questions)}
+    ),
+
+    cut_percentage AS (
         SELECT 
-            qm.question_code, 
-            CASE 
-                WHEN LENGTH(qm.question_text) > 60 THEN CONCAT(LEFT(qm.question_text, 60), '...')
-                ELSE qm.question_text
-            END AS question_text,
-            qm.answer_text AS answer_text,
-            CONCAT(cp.cutpercentage, '%') AS cutpercentage,
-            CONCAT(aa.avg_yes_percentage, '%') AS avg_yes_percentage,
-            CASE 
-                WHEN aa.avg_yes_percentage = 0 THEN NULL
-                ELSE ROUND((cp.cutpercentage / aa.avg_yes_percentage) * 100)
-            END AS `index`
-        FROM cut_percentage cp
-        JOIN average_answer aa ON cp.question_code = aa.question_code
-        JOIN question_mapping qm ON cp.question_code = qm.question_code
-        ORDER BY CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(qm.question_code, 'Q', -1), '_', 1) AS UNSIGNED), qm.question_code;
-        """
+            rr.question_code,
+            ROUND(COUNT(CASE WHEN LOWER(rr.response_text) = 'yes' THEN 1 END) * 100.0 / 
+                  COUNT(CASE WHEN LOWER(rr.response_text) IN ('yes', 'no') THEN 1 END)) AS cutpercentage
+        FROM relevant_responses rr
+        JOIN filtered_participants fp ON rr.participant_id = fp.participant_id
+        GROUP BY rr.question_code
+    ),
+
+    average_answer AS (
+        SELECT
+            question_code,
+            ROUND(AVG(CASE WHEN LOWER(response_text) = 'yes' THEN 1 ELSE 0 END) * 100.0) AS avg_yes_percentage
+        FROM relevant_responses
+        WHERE LOWER(response_text) IN ('yes', 'no')
+        GROUP BY question_code
+    )
+
+    SELECT 
+        qm.question_code, 
+        CASE 
+            WHEN LENGTH(qm.question_text) > 60 THEN CONCAT(LEFT(qm.question_text, 60), '...')
+            ELSE qm.question_text
+        END AS question_text,
+        qm.answer_text AS answer_text,
+        CONCAT(cp.cutpercentage, '%') AS cutpercentage,
+        CONCAT(aa.avg_yes_percentage, '%') AS avg_yes_percentage,
+        CASE 
+            WHEN aa.avg_yes_percentage = 0 THEN NULL
+            ELSE ROUND((cp.cutpercentage / aa.avg_yes_percentage) * 100)
+        END AS `index`
+    FROM cut_percentage cp
+    JOIN average_answer aa ON cp.question_code = aa.question_code
+    JOIN question_mapping qm ON cp.question_code = qm.question_code
+    ORDER BY CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(qm.question_code, 'Q', -1), '_', 1) AS UNSIGNED), qm.question_code;
+    """
+
     else:
         query = "SELECT * FROM responses WHERE 1=0"
             
