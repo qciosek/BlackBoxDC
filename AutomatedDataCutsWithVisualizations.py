@@ -39,7 +39,6 @@ def apply_custom_theme():
     """, unsafe_allow_html=True)
 
 
-
 # Connect to the MySQL database
 def connect_to_db():
     try:
@@ -56,10 +55,11 @@ def connect_to_db():
     )
     return connection
 connection = connect_to_db()
+
 # Clear Streamlit cache
 st.cache_data.clear()
+
 # Fetch data and sample size
- # Forces Streamlit to re-fetch data every time
 def fetch_data_and_sample_size(connection, selected_questions):
 
     question_code_filter = "', '".join(selected_questions)
@@ -134,9 +134,6 @@ def fetch_data_and_sample_size(connection, selected_questions):
             
     df = pd.read_sql(query, connection)
     return df, sample_size
-
-# The rest of the code remains the same.
-
 
 # Plot bar chart with editable labels
 def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, display_avg_yes, display_index, bar_color_cut, bar_color_yes, bar_color_index, orientation):
@@ -251,9 +248,23 @@ def main():
     apply_custom_theme()
 
     connection = connect_to_db()
-    question_query = """
+
+    # Fetch categories
+    category_query = """
+    SELECT DISTINCT question_category FROM question_mapping
+    ORDER BY question_category
+    """
+    category_df = pd.read_sql(category_query, connection)
+    categories = ["All Categories"] + category_df['question_category'].tolist()
+
+    # Category dropdown
+    selected_category = st.selectbox("Select a Category:", categories)
+
+    # Fetch question data based on the selected category
+    question_query = f"""
     SELECT question_code, answer_text, question_text 
     FROM question_mapping
+    WHERE question_category LIKE '{selected_category}' OR '{selected_category}' = 'All Categories'
     ORDER BY CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(question_code, 'Q', -1), '_', 1) AS UNSIGNED), question_code
     """
     question_df = pd.read_sql(question_query, connection)
@@ -326,11 +337,12 @@ def main():
                     orientation
                 )
             else:
-                st.write("Please select answers to display the bar chart.")
-        else:
-            st.write("No data found for the selected questions.")
-    else:
-        st.write("Please select questions to fetch data.")
+                st.write("Please select answers to display on the bar chart.")
 
+        else:
+            st.write("No data found for selected questions.")
+    else:
+        st.write("Please select at least one question.")
+    
 if __name__ == "__main__":
     main()
