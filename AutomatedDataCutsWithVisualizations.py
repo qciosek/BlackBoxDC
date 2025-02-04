@@ -59,7 +59,9 @@ connection = connect_to_db()
 # Fetch data and sample size
 def fetch_data_and_sample_size(connection, selected_questions):
     question_code_filter = "', '".join(selected_questions)
+
     if question_code_filter:
+        # Calculate the sample size: Participants who said "Yes" to all selected questions
         sample_size_query = f"""
         SELECT COUNT(DISTINCT participant_id) AS sample_size
         FROM (
@@ -78,64 +80,59 @@ def fetch_data_and_sample_size(connection, selected_questions):
     sample_size = sample_size_df['sample_size'][0] if not sample_size_df.empty else 0
 
     if question_code_filter:
+        # Main query for data
         query = f"""
-    WITH relevant_responses AS (
-        SELECT *
-        FROM responses
-        WHERE question_code IN ('{question_code_filter}')
-    ),
-
-    filtered_participants AS (
-        SELECT participant_id
-        FROM relevant_responses
-        WHERE LOWER(response_text) = 'yes'
-        GROUP BY participant_id
-        HAVING COUNT(DISTINCT question_code) = {len(selected_questions)}
-    ),
-
-    cut_percentage AS (
+        WITH filtered_responses AS (
+            SELECT participant_id
+            FROM responses
+            WHERE LOWER(response_text) = 'yes'
+            AND question_code IN ('{question_code_filter}')
+            GROUP BY participant_id
+            HAVING COUNT(DISTINCT question_code) = {len(selected_questions)}
+        ),
+        cut_percentage AS (
+            SELECT 
+                r.question_code,
+                ROUND(COUNT(CASE WHEN LOWER(r.response_text) = 'yes' THEN 1 END) * 100.0 / 
+                      COUNT(CASE WHEN LOWER(r.response_text) IN ('yes', 'no') THEN 1 END)) AS cutpercentage
+            FROM filtered_responses fr
+            JOIN responses r ON fr.participant_id = r.participant_id
+            GROUP BY r.question_code
+        ),
+        average_answer AS (
+            SELECT
+                r.question_code,
+                ROUND(AVG(CASE WHEN LOWER(r.response_text) = 'yes' THEN 1 ELSE 0 END) * 100.0) AS avg_yes_percentage
+            FROM responses r
+            WHERE LOWER(r.response_text) IN ('yes', 'no')
+            GROUP BY r.question_code
+        )
+    
         SELECT 
-            rr.question_code,
-            ROUND(COUNT(CASE WHEN LOWER(rr.response_text) = 'yes' THEN 1 END) * 100.0 / 
-                  COUNT(CASE WHEN LOWER(rr.response_text) IN ('yes', 'no') THEN 1 END)) AS cutpercentage
-        FROM relevant_responses rr
-        JOIN filtered_participants fp ON rr.participant_id = fp.participant_id
-        GROUP BY rr.question_code
-    ),
-
-    average_answer AS (
-        SELECT
-            question_code,
-            ROUND(AVG(CASE WHEN LOWER(response_text) = 'yes' THEN 1 ELSE 0 END) * 100.0) AS avg_yes_percentage
-        FROM relevant_responses
-        WHERE LOWER(response_text) IN ('yes', 'no')
-        GROUP BY question_code
-    )
-
-    SELECT 
-        qm.question_code, 
-        CASE 
-            WHEN LENGTH(qm.question_text) > 60 THEN CONCAT(LEFT(qm.question_text, 60), '...')
-            ELSE qm.question_text
-        END AS question_text,
-        qm.answer_text AS answer_text,
-        CONCAT(cp.cutpercentage, '%') AS cutpercentage,
-        CONCAT(aa.avg_yes_percentage, '%') AS avg_yes_percentage,
-        CASE 
-            WHEN aa.avg_yes_percentage = 0 THEN NULL
-            ELSE ROUND((cp.cutpercentage / aa.avg_yes_percentage) * 100)
-        END AS `index`
-    FROM cut_percentage cp
-    JOIN average_answer aa ON cp.question_code = aa.question_code
-    JOIN question_mapping qm ON cp.question_code = qm.question_code
-    ORDER BY CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(qm.question_code, 'Q', -1), '_', 1) AS UNSIGNED), qm.question_code;
-    """
-
+            qm.question_code, 
+            CASE 
+                WHEN LENGTH(qm.question_text) > 60 THEN CONCAT(LEFT(qm.question_text, 60), '...')
+                ELSE qm.question_text
+            END AS question_text,
+            qm.answer_text AS answer_text,
+            CONCAT(cp.cutpercentage, '%') AS cutpercentage,
+            CONCAT(aa.avg_yes_percentage, '%') AS avg_yes_percentage,
+            CASE 
+                WHEN aa.avg_yes_percentage = 0 THEN NULL
+                ELSE ROUND((cp.cutpercentage / aa.avg_yes_percentage) * 100)
+            END AS `index`
+        FROM question_mapping qm
+        LEFT JOIN cut_percentage cp ON qm.question_code = cp.question_code
+        LEFT JOIN average_answer aa ON qm.question_code = aa.question_code
+        WHERE qm.question_code IN ('{question_code_filter}')
+        ORDER BY CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(qm.question_code, 'Q', -1), '_', 1) AS UNSIGNED), qm.question_code;
+        """
     else:
-        query = "SELECT * FROM responses WHERE 1=0"
+        query = "SELECT * FROM question_mapping WHERE 1=0"
             
     df = pd.read_sql(query, connection)
     return df, sample_size
+
 
 
 # Plot bar chart with editable labels
