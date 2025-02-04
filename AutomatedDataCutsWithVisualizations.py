@@ -305,7 +305,7 @@ def main():
 
             st.subheader("Bar Chart Visualization")
 
-            display_avg_yes = st.checkbox("Display Total Sample Percentages", value=True)
+            display_avg_yes = st.checkbox("Display Total Sample Percentages", value=False)
             display_cut_percentage = st.checkbox("Display Data Cut Percentages", value=True)
             display_index = st.checkbox("Display Index", value=False)
 
