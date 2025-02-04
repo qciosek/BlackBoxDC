@@ -78,7 +78,7 @@ def fetch_data_and_sample_size(connection, selected_questions):
     sample_size = sample_size_df['sample_size'][0] if not sample_size_df.empty else 0
 
     if question_code_filter:
-    query = f"""
+        query = f"""
     WITH relevant_responses AS (
         SELECT *
         FROM responses
