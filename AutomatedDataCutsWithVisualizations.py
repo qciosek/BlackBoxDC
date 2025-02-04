@@ -39,6 +39,7 @@ def apply_custom_theme():
     """, unsafe_allow_html=True)
 
 
+
 # Connect to the MySQL database
 def connect_to_db():
     try:
@@ -55,11 +56,13 @@ def connect_to_db():
     )
     return connection
 connection = connect_to_db()
-
+# Clear Streamlit cache
+st.cache_data.clear()
 # Fetch data and sample size
+ # Forces Streamlit to re-fetch data every time
 def fetch_data_and_sample_size(connection, selected_questions):
-    question_code_filter = "', '".join(selected_questions)
 
+    question_code_filter = "', '".join(selected_questions)
     if question_code_filter:
         # Calculate the sample size: Participants who said "Yes" to all selected questions
         sample_size_query = f"""
@@ -92,20 +95,20 @@ def fetch_data_and_sample_size(connection, selected_questions):
         ),
         cut_percentage AS (
             SELECT 
-                r.question_code,
-                ROUND(COUNT(CASE WHEN LOWER(r.response_text) = 'yes' THEN 1 END) * 100.0 / 
-                      COUNT(CASE WHEN LOWER(r.response_text) IN ('yes', 'no') THEN 1 END)) AS cutpercentage
+                question_code,
+                ROUND(COUNT(CASE WHEN LOWER(response_text) = 'yes' THEN 1 END) * 100.0 / 
+                      COUNT(CASE WHEN LOWER(response_text) IN ('yes', 'no') THEN 1 END)) AS cutpercentage
             FROM filtered_responses fr
             JOIN responses r ON fr.participant_id = r.participant_id
-            GROUP BY r.question_code
+            GROUP BY question_code
         ),
         average_answer AS (
             SELECT
-                r.question_code,
-                ROUND(AVG(CASE WHEN LOWER(r.response_text) = 'yes' THEN 1 ELSE 0 END) * 100.0) AS avg_yes_percentage
-            FROM responses r
-            WHERE LOWER(r.response_text) IN ('yes', 'no')
-            GROUP BY r.question_code
+                question_code,
+                ROUND(AVG(CASE WHEN LOWER(response_text) = 'yes' THEN 1 ELSE 0 END) * 100.0) AS avg_yes_percentage
+            FROM responses
+            WHERE LOWER(response_text) IN ('yes', 'no')
+            GROUP BY question_code
         )
     
         SELECT 
@@ -121,18 +124,18 @@ def fetch_data_and_sample_size(connection, selected_questions):
                 WHEN aa.avg_yes_percentage = 0 THEN NULL
                 ELSE ROUND((cp.cutpercentage / aa.avg_yes_percentage) * 100)
             END AS `index`
-        FROM question_mapping qm
-        LEFT JOIN cut_percentage cp ON qm.question_code = cp.question_code
-        LEFT JOIN average_answer aa ON qm.question_code = aa.question_code
-        WHERE qm.question_code IN ('{question_code_filter}')
+        FROM cut_percentage cp
+        JOIN average_answer aa ON cp.question_code = aa.question_code
+        JOIN question_mapping qm ON cp.question_code = qm.question_code
         ORDER BY CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(qm.question_code, 'Q', -1), '_', 1) AS UNSIGNED), qm.question_code;
         """
     else:
-        query = "SELECT * FROM question_mapping WHERE 1=0"
+        query = "SELECT * FROM responses WHERE 1=0"
             
     df = pd.read_sql(query, connection)
     return df, sample_size
 
+# The rest of the code remains the same.
 
 
 # Plot bar chart with editable labels
@@ -248,114 +251,86 @@ def main():
     apply_custom_theme()
 
     connection = connect_to_db()
-
-    # Fetch the available question categories
-    category_query = """
-    SELECT DISTINCT question_category
-    FROM responses
-    ORDER BY question_category;
+    question_query = """
+    SELECT question_code, answer_text, question_text 
+    FROM question_mapping
+    ORDER BY CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(question_code, 'Q', -1), '_', 1) AS UNSIGNED), question_code
     """
-    category_df = pd.read_sql(category_query, connection)
+    question_df = pd.read_sql(question_query, connection)
 
-    # Add a dropdown to select the question category
-    category_selected = st.selectbox("Select a Question Category:", category_df['question_category'].tolist())
+    question_df['dropdown_label'] = question_df['answer_text'] + ", " + question_df['question_code'] + ", " + question_df['question_text']
+    question_options = ["No Answer"] + question_df['dropdown_label'].tolist()
 
-    if category_selected:
-        # Fetch questions based on the selected category
-        question_query = f"""
-        SELECT question_code, answer_text, question_text, question_category 
-        FROM responses
-        WHERE question_category = '{category_selected}'
-        ORDER BY CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(question_code, 'Q', -1), '_', 1) AS UNSIGNED), question_code
-        """
-        question_df = pd.read_sql(question_query, connection)
+    question_selected_1 = st.selectbox("Select a Question (Optional):", question_options)
+    question_selected_2 = st.selectbox("Select a Second Question (Optional):", question_options)
+    question_selected_3 = st.selectbox("Select a Third Question (Optional):", question_options)
 
-        # Fetch distinct combinations of question_code, answer_text, and question_text
-        distinct_questions = question_df[['question_code', 'answer_text', 'question_text']].drop_duplicates()
+    selected_questions = [
+        question_df[question_df['dropdown_label'] == q]['question_code'].values[0]
+        for q in [question_selected_1, question_selected_2, question_selected_3]
+        if q != "No Answer"
+    ]
 
-        # Create dropdown options formatted as "question_code, answer_text, question_text"
-        distinct_questions['dropdown_label'] = distinct_questions['question_code'] + ", " + distinct_questions['answer_text'] + ", " + distinct_questions['question_text']
-        question_options = ["No Answer"] + distinct_questions['dropdown_label'].tolist()
+    if selected_questions:
+        df, sample_size = fetch_data_and_sample_size(connection, selected_questions)
+        st.write(f"Sample Size = {sample_size}")
+        if not df.empty:
+            st.write("Data fetched from MySQL:")
+            st.dataframe(df)
 
-        # Question dropdowns: Filtered based on the selected category
-        question_selected_1 = st.selectbox("Select a Question (Optional):", question_options)
-        question_selected_2 = st.selectbox("Select a Second Question (Optional):", question_options)
-        question_selected_3 = st.selectbox("Select a Third Question (Optional):", question_options)
+            df['cutpercentage_numeric'] = df['cutpercentage'].str.replace('%', '').astype(float)
+            df['avg_yes_percentage_numeric'] = df['avg_yes_percentage'].str.replace('%', '').astype(float)
 
-        # Extract selected question codes
-        selected_questions = [
-            question_selected_1,
-            question_selected_2,
-            question_selected_3
-        ]
-        
-        # Filter out "No Answer" selections
-        selected_questions = [q for q in selected_questions if q != "No Answer"]
+            csv_buffer = io.StringIO()
+            df.to_csv(csv_buffer, index=False)
+            csv_buffer.seek(0)
 
-        # Continue with the rest of the logic for fetching data and displaying it...
-        if selected_questions:
-            df, sample_size = fetch_data_and_sample_size(connection, selected_questions)
-            st.write(f"Sample Size = {sample_size}")
-            if not df.empty:
-                st.write("Data fetched from MySQL:")
-                st.dataframe(df)
-                
-                df['cutpercentage_numeric'] = df['cutpercentage'].str.replace('%', '').astype(float)
-                df['avg_yes_percentage_numeric'] = df['avg_yes_percentage'].str.replace('%', '').astype(float)
+            st.download_button(
+                label="Download CSV",
+                data=csv_buffer.getvalue(),
+                file_name="exported_data.csv",
+                mime="text/csv"
+            )
 
-                csv_buffer = io.StringIO()
-                df.to_csv(csv_buffer, index=False)
-                csv_buffer.seek(0)
+            st.subheader("Bar Chart Visualization")
 
-                st.download_button(
-                    label="Download CSV",
-                    data=csv_buffer.getvalue(),
-                    file_name="exported_data.csv",
-                    mime="text/csv"
+            display_avg_yes = st.checkbox("Display Total Sample Percentages", value=True)
+            display_cut_percentage = st.checkbox("Display Data Cut Percentages", value=True)
+            display_index = st.checkbox("Display Index", value=False)
+
+            selected_answers = st.multiselect(
+                "Select answers to display in the bar chart:",
+                question_df['dropdown_label'].tolist(),
+            )
+
+            bar_color_cut = st.color_picker("Pick a Bar Color for Data Cut Percentages", "#1f77b4")
+            bar_color_yes = st.color_picker("Pick a Bar Color for Total Sample Percentages", "#ff7f0e")
+            bar_color_index = st.color_picker("Pick a Bar Color for Index", "#2ca02c")
+            orientation = st.radio("Choose Chart Orientation", ["Vertical", "Horizontal"])
+
+            if selected_answers:
+                selected_question_codes = question_df[
+                    question_df['dropdown_label'].isin(selected_answers)
+                ]['question_code'].tolist()
+
+                filtered_df = df[df['question_code'].isin(selected_question_codes)]
+
+                plot_bar_chart_with_editable_labels(
+                    filtered_df,
+                    display_cut_percentage,
+                    display_avg_yes,
+                    display_index,
+                    bar_color_cut,
+                    bar_color_yes,
+                    bar_color_index,
+                    orientation
                 )
-
-                st.subheader("Bar Chart Visualization")
-                display_avg_yes = st.checkbox("Display Total Sample Percentages", value=True)
-                display_cut_percentage = st.checkbox("Display Data Cut Percentages", value=True)
-                display_index = st.checkbox("Display Index", value=False)
-
-                selected_answers = st.multiselect(
-                    "Select answers to display in the bar chart:",
-                    question_df['dropdown_label'].tolist(),
-                )
-
-                bar_color_cut = st.color_picker("Pick a Bar Color for Data Cut Percentages", "#1f77b4")
-                bar_color_yes = st.color_picker("Pick a Bar Color for Total Sample Percentages", "#ff7f0e")
-                bar_color_index = st.color_picker("Pick a Bar Color for Index", "#2ca02c")
-                orientation = st.radio("Choose Chart Orientation", ["Vertical", "Horizontal"])
-
-                if selected_answers:
-                    selected_question_codes = question_df[
-                        question_df['dropdown_label'].isin(selected_answers)
-                    ]['question_code'].tolist()
-
-                    filtered_df = df[df['question_code'].isin(selected_question_codes)]
-
-                    plot_bar_chart_with_editable_labels(
-                        filtered_df,
-                        display_cut_percentage,
-                        display_avg_yes,
-                        display_index,
-                        bar_color_cut,
-                        bar_color_yes,
-                        bar_color_index,
-                        orientation
-                    )
-                else:
-                    st.write("Please select answers to display the bar chart.")
             else:
-                st.write("No data found for the selected questions.")
+                st.write("Please select answers to display the bar chart.")
         else:
-            st.write("Please select questions to fetch data.")
-
+            st.write("No data found for the selected questions.")
     else:
-        st.write("Please select a question category to filter by.")
-
+        st.write("Please select questions to fetch data.")
 
 if __name__ == "__main__":
     main()
