@@ -322,7 +322,7 @@ def main():
             selected_answers = st.multiselect(
                 "Select answers to display in the bar chart:",
                 question_df_all['dropdown_label'].tolist()  # Uses the full list
-)
+            )
 
 # Convert selected labels to question codes
             selected_question_codes = question_df_all[
