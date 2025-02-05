@@ -331,7 +331,7 @@ def main():
                 bar_color_index = st.color_picker("Pick a color for Index", "#52c232")
 
                 # Allow for orientation selection (Vertical / Horizontal)
-                orientation = st.radio("Select the bar chart orientation:", ("Vertical", "Horizontal"))
+                orientation = st.radio("Select the bar chart orientation:", ("Vertical", "Horizontal"), index=1)
 
                 plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, display_avg_yes, display_index, bar_color_cut, bar_color_yes, bar_color_index, orientation)
         else:
