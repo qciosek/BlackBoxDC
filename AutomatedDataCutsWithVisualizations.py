@@ -332,9 +332,6 @@ def main():
             # Filter the data for the bar chart
             filtered_df = df[df['question_code'].isin(selected_question_codes)]
 
-
-            )
-
             bar_color_cut = st.color_picker("Pick a Bar Color for Data Cut Percentages", "#1f77b4")
             bar_color_yes = st.color_picker("Pick a Bar Color for Total Sample Percentages", "#ff7f0e")
             bar_color_index = st.color_picker("Pick a Bar Color for Index", "#2ca02c")
