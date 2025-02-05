@@ -268,6 +268,13 @@ def main():
     ORDER BY CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(question_code, 'Q', -1), '_', 1) AS UNSIGNED), question_code
     """
     question_df = pd.read_sql(question_query, connection)
+    # Query to get all possible answers (for Bar Chart Dropdown - Unaffected by Category)
+    question_query_all = """
+    SELECT question_code, answer_text, question_text 
+    FROM question_mapping
+    ORDER BY CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(question_code, 'Q', -1), '_', 1) AS UNSIGNED), question_code
+    """
+    question_df_all = pd.read_sql(question_query_all, connection)
 
     question_df['dropdown_label'] = question_df['answer_text'] + ", " + question_df['question_code'] + ", " + question_df['question_text']
     question_options = ["No Answer"] + question_df['dropdown_label'].tolist()
@@ -309,9 +316,23 @@ def main():
             display_cut_percentage = st.checkbox("Display Data Cut Percentages", value=True)
             display_index = st.checkbox("Display Index", value=False)
 
+            # Hardcoded mapping of answers to question codes
+            question_df_all['dropdown_label'] = question_df_all['answer_text'] + ", " + question_df_all['question_code'] + ", " + question_df_all['question_text']
+
             selected_answers = st.multiselect(
                 "Select answers to display in the bar chart:",
-                question_df['dropdown_label'].tolist(),
+                question_df_all['dropdown_label'].tolist()  # Uses the full list
+)
+
+# Convert selected labels to question codes
+            selected_question_codes = question_df_all[
+                question_df_all['dropdown_label'].isin(selected_answers)
+                ]['question_code'].tolist()
+
+            # Filter the data for the bar chart
+            filtered_df = df[df['question_code'].isin(selected_question_codes)]
+
+
             )
 
             bar_color_cut = st.color_picker("Pick a Bar Color for Data Cut Percentages", "#1f77b4")
