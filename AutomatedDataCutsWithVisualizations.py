@@ -326,8 +326,8 @@ def main():
 
                 filtered_df = df[df['question_code'].isin(selected_question_codes)]
 
-                bar_color_cut = st.color_picker("Pick a color for Data Cut Percentages", "#f58231")
-                bar_color_yes = st.color_picker("Pick a color for Total Sample Percentages", "#7f6d3d")
+                bar_color_cut = st.color_picker("Pick a color for Data Cut Percentages", "#3153F5")
+                bar_color_yes = st.color_picker("Pick a color for Total Sample Percentages", "#DC113D")
                 bar_color_index = st.color_picker("Pick a color for Index", "#52c232")
 
                 # Allow for orientation selection (Vertical / Horizontal)
