@@ -335,7 +335,7 @@ def main():
             bar_color_cut = st.color_picker("Pick a Bar Color for Data Cut Percentages", "#1f77b4")
             bar_color_yes = st.color_picker("Pick a Bar Color for Total Sample Percentages", "#ff7f0e")
             bar_color_index = st.color_picker("Pick a Bar Color for Index", "#2ca02c")
-            orientation = st.radio("Choose Chart Orientation", ["Vertical", "Horizontal"])
+            orientation = st.radio("Choose Chart Orientation", ["Vertical", "Horizontal"], index=0)
 
             if selected_answers:
                 selected_question_codes = question_df[
