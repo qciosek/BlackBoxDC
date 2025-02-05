@@ -54,10 +54,7 @@ def connect_to_db():
         port=3306,
     )
     return connection
-connection = connect_to_db()
 
-# Clear Streamlit cache
-st.cache_data.clear()
 
 # Fetch data and sample size
 def fetch_data_and_sample_size(connection, selected_questions):
@@ -113,10 +110,7 @@ def fetch_data_and_sample_size(connection, selected_questions):
     
         SELECT 
             qm.question_code, 
-            CASE 
-                WHEN LENGTH(qm.question_text) > 60 THEN CONCAT(LEFT(qm.question_text, 60), '...')
-                ELSE qm.question_text
-            END AS question_text,
+            qm.question_text,
             qm.answer_text AS answer_text,
             CONCAT(cp.cutpercentage, '%') AS cutpercentage,
             CONCAT(aa.avg_yes_percentage, '%') AS avg_yes_percentage,
@@ -134,6 +128,7 @@ def fetch_data_and_sample_size(connection, selected_questions):
             
     df = pd.read_sql(query, connection)
     return df, sample_size
+
 
 # Plot bar chart with editable labels
 def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, display_avg_yes, display_index, bar_color_cut, bar_color_yes, bar_color_index, orientation):
@@ -240,6 +235,7 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
     ax.legend()
     st.pyplot(fig)
 
+
 # Main function
 def main():
     st.title("World’s Greatest Data from Olympics Fandom Study")
@@ -323,44 +319,27 @@ def main():
                 question_df_all['dropdown_label'].tolist()  # Uses the full list
             )
 
-# Convert selected labels to question codes
-            selected_question_codes = question_df_all[
-                question_df_all['dropdown_label'].isin(selected_answers)
-                ]['question_code'].tolist()
-
-            # Filter the data for the bar chart
-            filtered_df = df[df['question_code'].isin(selected_question_codes)]
-
-            bar_color_cut = st.color_picker("Pick a Bar Color for Data Cut Percentages", "#1f77b4")
-            bar_color_yes = st.color_picker("Pick a Bar Color for Total Sample Percentages", "#ff7f0e")
-            bar_color_index = st.color_picker("Pick a Bar Color for Index", "#2ca02c")
-            orientation = st.radio("Choose Chart Orientation", ["Vertical", "Horizontal"], index=1)
-
             if selected_answers:
-                selected_question_codes = question_df[
-                    question_df['dropdown_label'].isin(selected_answers)
+                selected_question_codes = question_df_all[
+                    question_df_all['dropdown_label'].isin(selected_answers)
                 ]['question_code'].tolist()
 
                 filtered_df = df[df['question_code'].isin(selected_question_codes)]
 
-                plot_bar_chart_with_editable_labels(
-                    filtered_df,
-                    display_cut_percentage,
-                    display_avg_yes,
-                    display_index,
-                    bar_color_cut,
-                    bar_color_yes,
-                    bar_color_index,
-                    orientation
-                )
-            else:
-                st.write("Please select answers to display on the bar chart.")
+                bar_color_cut = st.color_picker("Pick a color for Data Cut Percentages", "#f58231")
+                bar_color_yes = st.color_picker("Pick a color for Total Sample Percentages", "#7f6d3d")
+                bar_color_index = st.color_picker("Pick a color for Index", "#52c232")
 
+                # Allow for orientation selection (Vertical / Horizontal)
+                orientation = st.radio("Select the bar chart orientation:", ("Vertical", "Horizontal"))
+
+                plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, display_avg_yes, display_index, bar_color_cut, bar_color_yes, bar_color_index, orientation)
         else:
-            st.write("No data found for selected questions.")
+            st.error("No data found for the selected questions.")
     else:
-        st.write("Please select at least one question.")
-    
+        st.warning("Please select at least one question to proceed.")
+
+
+# Run main function
 if __name__ == "__main__":
     main()
-
