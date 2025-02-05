@@ -276,7 +276,7 @@ def main():
     """
     question_df_all = pd.read_sql(question_query_all, connection)
 
-    question_df['dropdown_label'] = question_df['answer_text'] + ", " + question_df['question_code'] 
+    question_df['dropdown_label'] = question_df['answer_text'] + ", " + question_df['question_code'] + ", " + question_df['question_text']
     question_options = ["No Answer"] + question_df['dropdown_label'].tolist()
 
     question_selected_1 = st.selectbox("Select a Question (Optional):", question_options)
@@ -317,7 +317,7 @@ def main():
             display_index = st.checkbox("Display Index", value=False)
 
             # Hardcoded mapping of answers to question codes
-            question_df_all['dropdown_label'] = question_df_all['question_code'] + ", " + question_df_all['answer_text'] + ", " + question_df_all['question_text']
+            question_df_all['dropdown_label'] = question_df_all['question_code'] + ", " + question_df_all['answer_text']
             selected_answers = st.multiselect(
                 "Select answers to display in the bar chart:",
                 question_df_all['dropdown_label'].tolist()  # Uses the full list
