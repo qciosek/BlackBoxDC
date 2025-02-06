@@ -342,30 +342,49 @@ def main():
             )
 
 # Logic to include child codes for "All Answers" selections
-            selected_question_codes = []
-            for answer in selected_answers:
-                if answer.startswith("All Answers: "):
-        # Extract parent code (e.g., Q1)
-                    parent_code = answer.split(": ")[1].split(" ")[0]
-        
-        # Include all child codes starting with the parent code (e.g., Q1 includes Q1_M1, Q1_M2, etc.)
-                    child_codes = question_df_all[
-                        question_df_all['question_code'].str.startswith(parent_code + "_")
-                    ]['question_code'].tolist()
+           # Modified section to handle "All Answers" and parent-child relationship
+            selected_answers = st.multiselect(
+                "Select answers to display in the bar chart (All Answers will include all related codes):",
+                full_dropdown_options
+            )
 
-                    selected_question_codes.extend(child_codes)
-                else:
-        # Handle individual answer selections
-                    code = question_df_all[
-                        question_df_all['dropdown_label'] == answer
-                    ]['question_code'].values[0]
-                    selected_question_codes.append(code)
+            if selected_answers:
+    # Update selected question codes to include both parent and child codes
+                selected_question_codes = []
+                for answer in selected_answers:
+                    if answer.startswith("All Answers: "):
+            # Extract parent code (e.g., Q1)
+                        parent_code = answer.split(": ")[1].split(" ")[0]
+            
+            # Include all child codes
+                        child_codes = question_df_all[
+                            question_df_all['question_code'].str.startswith(parent_code + "_")
+                        ]['question_code'].tolist()
+                        selected_question_codes.extend(child_codes)
+                    else:
+            # Handle individual answers
+                        code = question_df_all[
+                            question_df_all['dropdown_label'] == answer
+                        ]['question_code'].values[0]
+                        selected_question_codes.append(code)
 
-# Remove duplicates
-            selected_question_codes = list(set(selected_question_codes))
+    # Remove duplicates
+                selected_question_codes = list(set(selected_question_codes))
 
-# Filter the data
-            filtered_df = df[df['question_code'].isin(selected_question_codes)]
+    # Filter the dataframe based on the selected question codes
+                filtered_df = df[df['question_code'].isin(selected_question_codes)]
+
+    # Continue with plotting
+    if not filtered_df.empty:
+        bar_color_cut = st.color_picker("Pick a color for Data Cut Percentages", "#3153F5")
+        bar_color_yes = st.color_picker("Pick a color for Total Sample Percentages", "#DC113D")
+        bar_color_index = st.color_picker("Pick a color for Index", "#52c232")
+
+        orientation = st.radio("Select the bar chart orientation:", ("Vertical", "Horizontal"), index=1)
+
+        plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, display_avg_yes, display_index, bar_color_cut, bar_color_yes, bar_color_index, orientation)
+    else:
+        st.warning("No data found for the selected answers.")
 
 
 
