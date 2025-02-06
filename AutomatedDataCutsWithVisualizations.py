@@ -386,7 +386,7 @@ def main():
     else:
         st.warning("No data found for the selected answers.")
 
-            if selected_answers:
+        if selected_answers:
                 selected_question_codes = question_df_all[
                     question_df_all['dropdown_label'].isin(selected_answers)
                 ]['question_code'].tolist()
