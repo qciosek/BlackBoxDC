@@ -267,32 +267,6 @@ def main():
     """
     question_df = pd.read_sql(question_query, connection)
 
-    # Query to get all possible answers (for Bar Chart Dropdown - Unaffected by Category)
-    question_query_all = """
-    SELECT question_code, answer_text, question_text 
-    FROM question_mapping
-    ORDER BY CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(question_code, 'Q', -1), '_', 1) AS UNSIGNED), question_code
-    """
-    question_df_all = pd.read_sql(question_query_all, connection)
-
-    # Add parent_code for grouping
-    question_df_all['parent_code'] = question_df_all['question_code'].str.extract(r'^(Q\d+)', expand=False)
-
-    # Group by parent_code and aggregate question_texts
-    parent_info = (
-        question_df_all.groupby('parent_code')['question_text']
-        .unique()
-        .reset_index()
-        .dropna(subset=['parent_code'])
-    )
-
-    # Add q_question_code to the question text for display
-    parent_info['dropdown_label'] = parent_info.apply(
-        lambda row: f"All Answers: {row['parent_code']} ({'; '.join(row['question_text'])})",
-        axis=1
-    )
-
-    # Regular Question Dropdowns
     question_df['dropdown_label'] = question_df['answer_text'] + ", " + question_df['question_code'] + ", " + question_df['question_text']
     question_options = ["No Answer"] + question_df['dropdown_label'].tolist()
 
@@ -329,56 +303,44 @@ def main():
 
             st.subheader("Bar Chart Visualization")
 
-            # Bar Chart Specific Dropdown for q_question_code
-            selected_question_code = st.selectbox("Select a Question:", question_df_all['parent_code'].unique())
+            display_avg_yes = st.checkbox("Display Total Sample Percentages", value=False)
+            display_cut_percentage = st.checkbox("Display Data Cut Percentages", value=True)
+            display_index = st.checkbox("Display Index", value=False)
 
-            # When a q_question_code is selected, auto-select answers with matching q_question_codes in the second dropdown
-            matching_answers = question_df_all[question_df_all['parent_code'] == selected_question_code]
-
-            # Now create the second dropdown with matching answers
             selected_answers = st.multiselect(
-                "Select answers to display in the bar chart (All Answers will include all related codes):",
-                matching_answers['answer_text'] + ", " + matching_answers['parent_code'] + ", " + matching_answers['question_text'].tolist()
+                "Select answers to display in the bar chart:",
+                question_df['dropdown_label'].tolist(),
             )
 
+            bar_color_cut = st.color_picker("Pick a Bar Color for Data Cut Percentages", "#0F0FE4")
+            bar_color_yes = st.color_picker("Pick a Bar Color for Total Sample Percentages", "#B50C0C")
+            bar_color_index = st.color_picker("Pick a Bar Color for Index", "#2ca02c")
+            orientation = st.radio("Choose Chart Orientation", ["Vertical", "Horizontal"], index=1)
+
             if selected_answers:
-                selected_question_codes = []
-                for answer in selected_answers:
-                    if answer.startswith("All Answers: "):
-                        parent_code = answer.split(": ")[1].split(" ")[0]
-                        # Include all child codes
-                        child_codes = question_df_all[
-                            question_df_all['parent_code'].str.startswith(parent_code)
-                        ]['question_code'].tolist()
-                        selected_question_codes.extend(child_codes)
-                    else:
-                        # Handle individual answers
-                        selected_question_codes.append(
-                            question_df_all[question_df_all['answer_text'] == answer.split(", ")[0]]['question_code'].values[0]
-                        )
+                selected_question_codes = question_df[
+                    question_df['dropdown_label'].isin(selected_answers)
+                ]['question_code'].tolist()
 
-                # Fetch and filter data based on selected answers
-                if selected_question_codes:
-                    filtered_df = df[df['question_code'].isin(selected_question_codes)]
+                filtered_df = df[df['question_code'].isin(selected_question_codes)]
 
-                    bar_color_cut = st.color_picker("Pick a color for Data Cut Percentages", "#3153F5")
-                    bar_color_yes = st.color_picker("Pick a color for Total Sample Percentages", "#DC113D")
-                    bar_color_index = st.color_picker("Pick a color for Index", "#52c232")
-
-                    # Allow for orientation selection (Vertical / Horizontal)
-                    orientation = st.radio("Select the bar chart orientation:", ("Vertical", "Horizontal"), index=1)
-
-                    plot_bar_chart_with_editable_labels(filtered_df, bar_color_cut, bar_color_yes, bar_color_index, orientation)
-                else:
-                    st.write("Please select at least one answer option.")
+                plot_bar_chart_with_editable_labels(
+                    filtered_df,
+                    display_cut_percentage,
+                    display_avg_yes,
+                    display_index,
+                    bar_color_cut,
+                    bar_color_yes,
+                    bar_color_index,
+                    orientation
+                )
             else:
-                st.write("Please select a question to display data.")
-        else:
-            st.error("No data found for the selected questions.")
-    else:
-        st.warning("Please select at least one question to proceed.")
+                st.write("Please select answers to display on the bar chart.")
 
-# Run main function
+        else:
+            st.write("No data found for selected questions.")
+    else:
+        st.write("Please select at least one question.")
+
 if __name__ == "__main__":
     main()
-
