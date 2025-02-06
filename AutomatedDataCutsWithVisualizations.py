@@ -314,6 +314,38 @@ def main():
 
             # Hardcoded mapping of answers to question codes
             question_df_all['dropdown_label'] = question_df_all['answer_text'] + ", " + question_df_all['question_code'] + ", " + question_df_all['question_text']
+            # Create parent codes based on unique prefixes before '_'
+            parent_codes = question_df_all['question_code'].str.extract(r'^(Q\d+)', expand=False).dropna().unique().tolist()
+
+# Add parent codes to the dropdown options
+            parent_dropdown_options = ["Parent: " + code for code in parent_codes]
+            full_dropdown_options = parent_dropdown_options + question_df_all['dropdown_label'].tolist()
+
+# Updated multiselect for bar chart answers
+            selected_answers = st.multiselect(
+                "Select answers to display in the bar chart (Parent codes will include all child codes):",
+                full_dropdown_options
+            )
+
+# Logic to include child codes if a parent is selected
+            selected_question_codes = []
+            for answer in selected_answers:
+                if answer.startswith("Parent: "):
+                    parent_code = answer.replace("Parent: ", "")
+                    # Add all child codes starting with the parent code
+                    child_codes = question_df_all[question_df_all['question_code'].str.startswith(parent_code)]['question_code'].tolist()
+                    selected_question_codes.extend(child_codes)
+                else:
+        # Extract the question_code from dropdown_label
+                    code = question_df_all[question_df_all['dropdown_label'] == answer]['question_code'].values[0]
+                    selected_question_codes.append(code)
+
+# Remove duplicates
+            selected_question_codes = list(set(selected_question_codes))
+
+# Filter DataFrame based on selected codes
+            filtered_df = df[df['question_code'].isin(selected_question_codes)]
+
             selected_answers = st.multiselect(
                 "Select answers to display in the bar chart:",
                 question_df_all['dropdown_label'].tolist()  # Uses the full list
