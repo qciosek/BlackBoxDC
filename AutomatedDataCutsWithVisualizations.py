@@ -25,13 +25,11 @@ def apply_custom_theme():
                 background-color: {background_color};
                 color: {text_color};
             }}
-
             .stButton>button {{
                 background-color: {button_color};
                 color: white;
                 font-weight: bold;
             }}
-
             .css-1b7ki0p {{
                 background-color: {background_color};
             }}
@@ -125,7 +123,7 @@ def fetch_data_and_sample_size(connection, selected_questions):
         """
     else:
         query = "SELECT * FROM responses WHERE 1=0"
-            
+
     df = pd.read_sql(query, connection)
     return df, sample_size
 
@@ -151,7 +149,7 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
             key=f"label_input_{i}"
         )
         edited_labels.append(edited_label)
- 
+
     filtered_df["edited_text"] = edited_labels
 
     max_chars_per_line = 30
@@ -183,7 +181,7 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
         y_max = max(y_max, filtered_df['avg_yes_percentage_numeric'].max())
     if display_index:
         y_max = max(y_max, filtered_df['index'].max())
-  
+
     y_limit = min(500, max(60, y_max + 15))
 
     if orientation == "Vertical":
@@ -314,87 +312,33 @@ def main():
 
             # Hardcoded mapping of answers to question codes
             question_df_all['dropdown_label'] = question_df_all['answer_text'] + ", " + question_df_all['question_code'] + ", " + question_df_all['question_text']
-
-# Extract parent codes (e.g., Q1 from Q1_M1)
-         
-
-# Logic to include child codes for "All Answers" selections
-           # Modified section to handle "All Answers" and parent-child relationship
             selected_answers = st.multiselect(
-                "Select answers to display in the bar chart (All Answers will include all related codes):",
-                full_dropdown_options
+                "Select answers to display in the bar chart:",
+                question_df_all['dropdown_label'].tolist()  # Uses the full list
             )
 
             if selected_answers:
-    # Update selected question codes to include both parent and child codes
-                selected_question_codes = []
-                for answer in selected_answers:
-                    if answer.startswith("All Answers: "):
-            # Extract parent code (e.g., Q1)
-                        parent_code = answer.split(": ")[1].split(" ")[0]
-            
-            # Include all child codes
-                        child_codes = question_df_all[
-                            question_df_all['question_code'].str.startswith(parent_code + "_")
-                        ]['question_code'].tolist()
-                        selected_question_codes.extend(child_codes)
-                    else:
-            # Handle individual answers
-                        selected_question_codes.append(
-                            question_df_all[question_df_all['dropdown_label'] == answer]['question_code'].values[0]
-                        )
-                                    # Fetch and filter data based on selected answers
-            if selected_question_codes:
-                df_filtered, sample_size = fetch_data_and_sample_size(connection, selected_question_codes)
-                st.write(f"Sample Size = {sample_size}")
+                selected_question_codes = question_df_all[
+                    question_df_all['dropdown_label'].isin(selected_answers)
+                ]['question_code'].tolist()
 
-                if not df_filtered.empty:
-                    st.write("Filtered Data:")
-                    st.dataframe(df_filtered)
+                filtered_df = df[df['question_code'].isin(selected_question_codes)]
 
-                    df_filtered['cutpercentage_numeric'] = df_filtered['cutpercentage'].str.replace('%', '').astype(float)
-                    df_filtered['avg_yes_percentage_numeric'] = df_filtered['avg_yes_percentage'].str.replace('%', '').astype(float)
+                bar_color_cut = st.color_picker("Pick a color for Data Cut Percentages", "#3153F5")
+                bar_color_yes = st.color_picker("Pick a color for Total Sample Percentages", "#DC113D")
+                bar_color_index = st.color_picker("Pick a color for Index", "#52c232")
 
-                    # Generate CSV for download
-                    csv_buffer = io.StringIO()
-                    df_filtered.to_csv(csv_buffer, index=False)
-                    csv_buffer.seek(0)
+                # Allow for orientation selection (Vertical / Horizontal)
+               
+                orientation = st.radio("Select the bar chart orientation:", ("Vertical", "Horizontal"), index=1)
 
-                    st.download_button(
-                        label="Download Filtered Data CSV",
-                        data=csv_buffer.getvalue(),
-                        file_name="filtered_data.csv",
-                        mime="text/csv"
-                    )
-
-                    # Bar chart visualization
-                    st.subheader("Filtered Bar Chart Visualization")
-
-                    # Allow user to choose chart orientation
-                    orientation = st.radio("Select Bar Chart Orientation", ("Vertical", "Horizontal"))
-
-                    # Bar color customization
-                    bar_color_cut = st.color_picker("Pick Data Cut Bar Color", "#1f77b4")
-                    bar_color_yes = st.color_picker("Pick Yes Percentage Bar Color", "#ff7f0e")
-                    bar_color_index = st.color_picker("Pick Index Bar Color", "#2ca02c")
-
-                    plot_bar_chart_with_editable_labels(
-                        df_filtered, display_cut_percentage, display_avg_yes, display_index,
-                        bar_color_cut, bar_color_yes, bar_color_index, orientation
-                    )
-                else:
-                    st.write("No data available for the selected answers.")
-            else:
-                st.write("Please select at least one answer option.")
-
+                plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, display_avg_yes, display_index, bar_color_cut, bar_color_yes, bar_color_index, orientation)
+        else:
+            st.error("No data found for the selected questions.")
     else:
-        st.write("Please select at least one question to display data.")
+        st.warning("Please select at least one question to proceed.")
 
-# Run the main function
+
+# Run main function
 if __name__ == "__main__":
     main()
-
-
-    
-                
-     
