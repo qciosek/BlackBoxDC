@@ -313,46 +313,49 @@ def main():
             display_index = st.checkbox("Display Index", value=False)
 
             # Hardcoded mapping of answers to question codes
-            question_df_all['dropdown_label'] = question_df_all['answer_text'] + ", " + question_df_all['question_code'] + ", " + question_df_all['question_text']
-        
-# Extract parent codes from question codes (e.g., Q1 from Q1_M1)
+           question_df_all['dropdown_label'] = question_df_all['answer_text'] + ", " + question_df_all['question_code'] + ", " + question_df_all['question_text']
+
+# Extract parent codes (e.g., Q1 from Q1_M1)
             question_df_all['parent_code'] = question_df_all['question_code'].str.extract(r'^(Q\d+)', expand=False)
 
 # Group by parent_code and aggregate question_texts
             parent_info = (
                 question_df_all.groupby('parent_code')['question_text']
-                .unique()  # Get unique question_texts for each parent
+                .unique()
                 .reset_index()
                 .dropna(subset=['parent_code'])
             )
 
-# Format parent dropdown labels with aggregated question_text
+# Format parent dropdown labels
             parent_info['dropdown_label'] = parent_info.apply(
                 lambda row: f"All Answers: {row['parent_code']} ({'; '.join(row['question_text'])})",
                 axis=1
             )
 
-# Combine parent options with individual answer options
+# Combine parent options with individual answers
             full_dropdown_options = parent_info['dropdown_label'].tolist() + question_df_all['dropdown_label'].tolist()
 
-# Updated multiselect for bar chart answers
+# Multiselect dropdown
             selected_answers = st.multiselect(
                 "Select answers to display in the bar chart (All Answers will include all related codes):",
                 full_dropdown_options
             )
 
-# Logic to include child codes if an "All Answers" option is selected
+# Logic to include child codes for "All Answers" selections
             selected_question_codes = []
             for answer in selected_answers:
                 if answer.startswith("All Answers: "):
-                    parent_code = answer.split(" ")[2]  # Extract 'Q1' from 'All Answers: Q1 (Text...)'
-        # Include all codes starting with the parent code (e.g., Q1 includes Q1_M1, Q1_M2)
+        # Extract parent code (e.g., Q1)
+                    parent_code = answer.split(": ")[1].split(" ")[0]
+        
+        # Include all child codes starting with the parent code (e.g., Q1 includes Q1_M1, Q1_M2, etc.)
                     child_codes = question_df_all[
-                        question_df_all['question_code'].str.startswith(parent_code)
+                        question_df_all['question_code'].str.startswith(parent_code + "_")
                     ]['question_code'].tolist()
+
                     selected_question_codes.extend(child_codes)
                 else:
-        # Extract the question_code from dropdown_label
+        # Handle individual answer selections
                     code = question_df_all[
                         question_df_all['dropdown_label'] == answer
                     ]['question_code'].values[0]
@@ -361,8 +364,9 @@ def main():
 # Remove duplicates
             selected_question_codes = list(set(selected_question_codes))
 
-# Filter DataFrame based on selected codes
+# Filter the data
             filtered_df = df[df['question_code'].isin(selected_question_codes)]
+
 
 
             selected_answers = st.multiselect(
