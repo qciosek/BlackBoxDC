@@ -318,7 +318,7 @@ def main():
             parent_codes = question_df_all['question_code'].str.extract(r'^(Q\d+)', expand=False).dropna().unique().tolist()
 
 # Add parent codes to the dropdown options
-            parent_dropdown_options = ["Parent: " + code for code in parent_codes]
+            parent_dropdown_options = [code for code in parent_codes]
             full_dropdown_options = parent_dropdown_options + question_df_all['dropdown_label'].tolist()
 
 # Updated multiselect for bar chart answers
