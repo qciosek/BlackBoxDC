@@ -313,7 +313,7 @@ def main():
             display_index = st.checkbox("Display Index", value=False)
 
             # Hardcoded mapping of answers to question codes
-           question_df_all['dropdown_label'] = question_df_all['answer_text'] + ", " + question_df_all['question_code'] + ", " + question_df_all['question_text']
+            question_df_all['dropdown_label'] = question_df_all['answer_text'] + ", " + question_df_all['question_code'] + ", " + question_df_all['question_text']
 
 # Extract parent codes (e.g., Q1 from Q1_M1)
             question_df_all['parent_code'] = question_df_all['question_code'].str.extract(r'^(Q\d+)', expand=False)
