@@ -316,30 +316,7 @@ def main():
             question_df_all['dropdown_label'] = question_df_all['answer_text'] + ", " + question_df_all['question_code'] + ", " + question_df_all['question_text']
 
 # Extract parent codes (e.g., Q1 from Q1_M1)
-            question_df_all['parent_code'] = question_df_all['question_code'].str.extract(r'^(Q\d+)', expand=False)
-
-# Group by parent_code and aggregate question_texts
-            parent_info = (
-                question_df_all.groupby('parent_code')['question_text']
-                .unique()
-                .reset_index()
-                .dropna(subset=['parent_code'])
-            )
-
-# Format parent dropdown labels
-            parent_info['dropdown_label'] = parent_info.apply(
-                lambda row: f"All Answers: {row['parent_code']} ({'; '.join(row['question_text'])})",
-                axis=1
-            )
-
-# Combine parent options with individual answers
-            full_dropdown_options = parent_info['dropdown_label'].tolist() + question_df_all['dropdown_label'].tolist()
-
-# Multiselect dropdown
-            selected_answers = st.multiselect(
-                "Select answers to display in the bar chart (All Answers will include all related codes):",
-                full_dropdown_options
-            )
+         
 
 # Logic to include child codes for "All Answers" selections
            # Modified section to handle "All Answers" and parent-child relationship
