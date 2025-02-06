@@ -386,12 +386,7 @@ def main():
     else:
         st.warning("No data found for the selected answers.")
 
-        if selected_answers:
-                selected_question_codes = question_df_all[
-                    question_df_all['dropdown_label'].isin(selected_answers)
-                ]['question_code'].tolist()
-
-                filtered_df = df[df['question_code'].isin(selected_question_codes)]
+       
 
                 bar_color_cut = st.color_picker("Pick a color for Data Cut Percentages", "#3153F5")
                 bar_color_yes = st.color_picker("Pick a color for Total Sample Percentages", "#DC113D")
