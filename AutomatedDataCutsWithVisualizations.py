@@ -326,7 +326,7 @@ def main():
 
             if selected_answers:
                 selected_question_codes = question_df[
-                    question_df['dropdown_label'].isin(selected_answers)
+                    question_df_all['dropdown_label'].isin(selected_answers)
                 ]['question_code'].tolist()
 
                 filtered_df = df[df['question_code'].isin(selected_question_codes)]
