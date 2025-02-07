@@ -316,7 +316,7 @@ def main():
 
             selected_answers = st.multiselect(
                 "Select answers to display in the bar chart:",
-                question_df['dropdown_label'].tolist(),
+                question_df_all['dropdown_label'].tolist(),
             )
 
             bar_color_cut = st.color_picker("Pick a Bar Color for Data Cut Percentages", "#0F0FE4")
@@ -325,7 +325,7 @@ def main():
             orientation = st.radio("Choose Chart Orientation", ["Vertical", "Horizontal"], index=1)
 
             if selected_answers:
-                selected_question_codes = question_df[
+                selected_question_codes = question_df_all[
                     question_df_all['dropdown_label'].isin(selected_answers)
                 ]['question_code'].tolist()
 
