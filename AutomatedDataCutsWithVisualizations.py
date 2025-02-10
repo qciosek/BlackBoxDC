@@ -260,7 +260,7 @@ def main():
 
     # Fetch question data based on the selected category
     question_query = f"""
-    SELECT question_code, answer_text, question_text 
+    SELECT question_code, answer_text, question_text, q_question_code
     FROM question_mapping
     WHERE question_category LIKE '{selected_category}' OR '{selected_category}' = 'All Categories'
     ORDER BY CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(question_code, 'Q', -1), '_', 1) AS UNSIGNED), question_code
@@ -268,7 +268,7 @@ def main():
     question_df = pd.read_sql(question_query, connection)
 
     question_query_all = """
-    SELECT question_code, answer_text, question_text 
+    SELECT question_code, answer_text, question_text, q_question_code
     FROM question_mapping
     ORDER BY CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(question_code, 'Q', -1), '_', 1) AS UNSIGNED), question_code
     """
@@ -289,9 +289,11 @@ def main():
         if q != "No Answer"
     ]
 
+    # Fetch data and sample size after questions are selected
     if selected_questions:
         df, sample_size = fetch_data_and_sample_size(connection, selected_questions)
         st.write(f"Sample Size = {sample_size}")
+
         if not df.empty:
             st.write("Data fetched from MySQL:")
             st.dataframe(df)
@@ -310,16 +312,30 @@ def main():
                 mime="text/csv"
             )
 
+            # Parent Dropdown for q_question_code should appear only after data is fetched
+            q_question_code_options = ["No Question Code"] + question_df_all['q_question_code'].unique().tolist()
+            selected_q_question_code = st.selectbox("Optional: Select a Question Code to Auto-Select Answers:", q_question_code_options)
+
+            # Auto-select answers if a question code is chosen
+            if selected_q_question_code != "No Question Code":
+                auto_selected_answers = question_df_all[
+                    question_df_all['q_question_code'] == selected_q_question_code
+                ]['dropdown_label'].tolist()
+            else:
+                auto_selected_answers = []
+
+            # Bar Chart Answer Selection (with auto-selected answers)
+            selected_answers = st.multiselect(
+                "Select answers to display in the bar chart:",
+                question_df_all['dropdown_label'].tolist(),
+                default=auto_selected_answers  # Auto-select answers if applicable
+            )
+
             st.subheader("Bar Chart Visualization")
 
             display_avg_yes = st.checkbox("Display Total Sample Percentages", value=False)
             display_cut_percentage = st.checkbox("Display Data Cut Percentages", value=True)
             display_index = st.checkbox("Display Index", value=False)
-
-            selected_answers = st.multiselect(
-                "Select answers to display in the bar chart:",
-                question_df_all['dropdown_label'].tolist(),
-            )
 
             bar_color_cut = st.color_picker("Pick a Bar Color for Data Cut Percentages", "#0F0FE4")
             bar_color_yes = st.color_picker("Pick a Bar Color for Total Sample Percentages", "#B50C0C")
@@ -345,7 +361,6 @@ def main():
                 )
             else:
                 st.write("Please select answers to display on the bar chart.")
-
         else:
             st.write("No data found for selected questions.")
     else:
@@ -353,3 +368,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
