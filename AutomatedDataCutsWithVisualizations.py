@@ -320,11 +320,11 @@ def main():
            
            # Parent Dropdown for q_question_code should appear only after data is fetched
             q_question_code_options = ["No Question Code"] + [
-            f"{row.q_question_code} - {row.s_question_text}" for row in question_df_all.itertuples()
-        ]
-        selected_q_question_codes = st.multiselect(
-            "Optional: Select Question Codes to Auto-Select Answers:", q_question_code_options
-        )
+                f"{row.q_question_code} - {row.s_question_text}" for row in question_df_all.itertuples()
+            ]
+            selected_q_question_codes = st.multiselect(
+                "Optional: Select Question Codes to Auto-Select Answers:", q_question_code_options
+            )
 
 # Auto-select answers if question codes are chosen
             if "No Question Code" in selected_q_question_codes:
