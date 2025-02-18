@@ -318,21 +318,24 @@ def main():
             )
 
            
-          # Filter for unique q_question_code and s_question_text
+          # Fetch the data from question_df_all, assuming it's already fetched earlier
+# (For example, through the SQL query you mentioned earlier)
+
+# Filter for unique q_question_code and s_question_text
             unique_q_question_codes = question_df_all[['q_question_code', 's_question_text']].drop_duplicates()
 
 # Create the dropdown options as a combination of q_question_code and s_question_text
             q_question_code_options = ["No Question Code"] + sorted(
-                [f"{row.q_question_code} - {row.s_question_text}" for row in unique_q_question_codes.itertuples()]
+                [f"{row['q_question_code']} - {row['s_question_text']}" for _, row in unique_q_question_codes.iterrows()]
             )
 
-# Mapping from combined string back to q_question_code for easy access
+# Mapping from combined string (q_question_code - s_question_text) to q_question_code for easy access
             q_question_code_mapping = {
-                f"{row.q_question_code} - {row.s_question_text}": row.q_question_code
-                for row in unique_q_question_codes.itertuples()
+                f"{row['q_question_code']} - {row['s_question_text']}": row['q_question_code']
+                for _, row in unique_q_question_codes.iterrows()
             }
 
-# Select Question Codes
+# Select Question Codes (multiselect dropdown)
             selected_q_question_codes = st.multiselect(
                 "Optional: Select Question Codes to Auto-Select Answers:",
                 q_question_code_options
@@ -361,7 +364,9 @@ def main():
                 default=auto_selected_answers  # Auto-select answers if applicable
             )
 
+# Bar Chart Visualization
             st.subheader("Bar Chart Visualization")
+
 
 
             display_avg_yes = st.checkbox("Display Total Sample Percentages", value=False)
