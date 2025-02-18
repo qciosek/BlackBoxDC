@@ -208,7 +208,7 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
                     ax.text(i + bar_shift, v + 1, f"{v:.0f}%" if metric != "index" else f"{v:.0f}", ha="center", fontsize=9)
                 bar_shift += bar_width
 
-        ax.set_ylabel("Percentage")
+        ax.set_ylabel(" ")
         ax.set_title(chart_title)
         plt.xticks(x_pos, filtered_df["wrapped_text"], rotation=45, ha="right")
     else:
