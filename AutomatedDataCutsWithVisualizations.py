@@ -273,7 +273,7 @@ def main():
     question_df = pd.read_sql(question_query, connection)
 
     question_query_all = """
-    SELECT question_code, answer_text, question_text, q_question_code
+    SELECT question_code, answer_text, question_text, q_question_code, s_question_text
     FROM question_mapping
     ORDER BY CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(question_code, 'Q', -1), '_', 1) AS UNSIGNED), question_code
     """
@@ -317,10 +317,14 @@ def main():
                 mime="text/csv"
             )
 
-            # Parent Dropdown for q_question_code should appear only after data is fetched
+           
            # Parent Dropdown for q_question_code should appear only after data is fetched
-            q_question_code_options = ["No Question Code"] + sorted(question_df_all['q_question_code'].unique().tolist())
-            selected_q_question_codes = st.multiselect("Optional: Select Question Codes to Auto-Select Answers:", q_question_code_options)
+            q_question_code_options = ["No Question Code"] + [
+            f"{row.q_question_code} - {row.s_question_text}" for row in question_df_all.itertuples()
+        ]
+        selected_q_question_codes = st.multiselect(
+            "Optional: Select Question Codes to Auto-Select Answers:", q_question_code_options
+        )
 
 # Auto-select answers if question codes are chosen
             if "No Question Code" in selected_q_question_codes:
