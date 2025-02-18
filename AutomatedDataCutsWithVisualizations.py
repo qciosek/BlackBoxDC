@@ -319,7 +319,7 @@ def main():
 
            
           # Fetch the data from question_df_all, assuming it's already fetched earlier
-            q_question_code_options = ["No Question Code"] + sorted(question_df_all['q_question_code'].unique().tolist())
+            q_question_code_options = ["No Question Code"] + sorted(question_df_all['q_question_code' + ': ' + 's_question_text'].unique().tolist())
             selected_q_question_codes = st.multiselect("Optional: Select Question Codes to Auto-Select Answers:", q_question_code_options)
 # Create the dropdown options as a combination of q_question_code and s_question_text
             
