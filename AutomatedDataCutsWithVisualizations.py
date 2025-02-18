@@ -318,10 +318,10 @@ def main():
             )
 
            
-           # Filter for unique q_question_code and s_question_text
+          # Filter for unique q_question_code and s_question_text
             unique_q_question_codes = question_df_all[['q_question_code', 's_question_text']].drop_duplicates()
 
-            # Create the dropdown options as a combination of q_question_code and s_question_text
+# Create the dropdown options as a combination of q_question_code and s_question_text
             q_question_code_options = ["No Question Code"] + sorted(
                 [f"{row.q_question_code} - {row.s_question_text}" for row in unique_q_question_codes.itertuples()]
             )
@@ -343,11 +343,6 @@ def main():
                 q_question_code_mapping[option] for option in selected_q_question_codes if option != "No Question Code"
             ]
 
-# Now the selected_q_question_codes_only contains only the q_question_codes
-# You can proceed with the rest of your auto-selection logic using selected_q_question_codes_only
-
-
-
 # Auto-select answers if question codes are chosen
             if "No Question Code" in selected_q_question_codes:
                 selected_q_question_codes.remove("No Question Code")
@@ -359,8 +354,7 @@ def main():
             else:
                 auto_selected_answers = []
 
-
-            # Bar Chart Answer Selection (with auto-selected answers)
+# Bar Chart Answer Selection (with auto-selected answers)
             selected_answers = st.multiselect(
                 "Select answers to display in the bar chart:",
                 question_df_all['dropdown_label'].tolist(),
@@ -368,6 +362,7 @@ def main():
             )
 
             st.subheader("Bar Chart Visualization")
+
 
             display_avg_yes = st.checkbox("Display Total Sample Percentages", value=False)
             display_cut_percentage = st.checkbox("Display Data Cut Percentages", value=True)
