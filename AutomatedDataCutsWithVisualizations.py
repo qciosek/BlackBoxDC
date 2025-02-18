@@ -319,32 +319,10 @@ def main():
 
            
           # Fetch the data from question_df_all, assuming it's already fetched earlier
-# (For example, through the SQL query you mentioned earlier)
-
-# Filter for unique q_question_code and s_question_text
-            unique_q_question_codes = question_df_all[['q_question_code', 's_question_text']].drop_duplicates()
-
+            q_question_code_options = ["No Question Code"] + sorted(question_df_all['q_question_code'].unique().tolist())
+            selected_q_question_codes = st.multiselect("Optional: Select Question Codes to Auto-Select Answers:", q_question_code_options)
 # Create the dropdown options as a combination of q_question_code and s_question_text
-            q_question_code_options = ["No Question Code"] + sorted(
-                [f"{row['q_question_code']} - {row['s_question_text']}" for _, row in unique_q_question_codes.iterrows()]
-            )
-
-# Mapping from combined string (q_question_code - s_question_text) to q_question_code for easy access
-            q_question_code_mapping = {
-                f"{row['q_question_code']} - {row['s_question_text']}": row['q_question_code']
-                for _, row in unique_q_question_codes.iterrows()
-            }
-
-# Select Question Codes (multiselect dropdown)
-            selected_q_question_codes = st.multiselect(
-                "Optional: Select Question Codes to Auto-Select Answers:",
-                q_question_code_options
-            )
-
-# Extract the corresponding q_question_codes for the selected dropdown values
-            selected_q_question_codes_only = [
-                q_question_code_mapping[option] for option in selected_q_question_codes if option != "No Question Code"
-            ]
+            
 
 # Auto-select answers if question codes are chosen
             if "No Question Code" in selected_q_question_codes:
@@ -357,15 +335,16 @@ def main():
             else:
                 auto_selected_answers = []
 
-# Bar Chart Answer Selection (with auto-selected answers)
+
+            # Bar Chart Answer Selection (with auto-selected answers)
             selected_answers = st.multiselect(
                 "Select answers to display in the bar chart:",
                 question_df_all['dropdown_label'].tolist(),
                 default=auto_selected_answers  # Auto-select answers if applicable
             )
 
-# Bar Chart Visualization
             st.subheader("Bar Chart Visualization")
+
 
 
 
