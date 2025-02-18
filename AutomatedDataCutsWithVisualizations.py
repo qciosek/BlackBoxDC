@@ -314,7 +314,7 @@ def main():
 
             # Parent Dropdown for q_question_code should appear only after data is fetched
             q_question_code_options = ["No Question Code"] + question_df_all['q_question_code'].unique().tolist()
-            selected_q_question_code = st.selectbox("Optional: Select a Question Code to Auto-Select Answers:", q_question_code_options)
+            selected_q_question_code = st.selectbox("Optional: Select a Question to Auto-Select Answers:", q_question_code_options)
 
             # Auto-select answers if a question code is chosen
             if selected_q_question_code != "No Question Code":
