@@ -313,16 +313,21 @@ def main():
             )
 
             # Parent Dropdown for q_question_code should appear only after data is fetched
-            q_question_code_options = ["No Question Code"] + question_df_all['q_question_code'].unique().tolist()
-            selected_q_question_code = st.selectbox("Optional: Select a Question to Auto-Select Answers:", q_question_code_options)
+           # Parent Dropdown for q_question_code should appear only after data is fetched
+            q_question_code_options = ["No Question Code"] + sorted(question_df_all['q_question_code'].unique().tolist())
+            selected_q_question_codes = st.multiselect("Optional: Select Question Codes to Auto-Select Answers:", q_question_code_options)
 
-            # Auto-select answers if a question code is chosen
-            if selected_q_question_code != "No Question Code":
+# Auto-select answers if question codes are chosen
+            if "No Question Code" in selected_q_question_codes:
+                selected_q_question_codes.remove("No Question Code")
+
+            if selected_q_question_codes:
                 auto_selected_answers = question_df_all[
-                    question_df_all['q_question_code'] == selected_q_question_code
+                    question_df_all['q_question_code'].isin(selected_q_question_codes)
                 ]['dropdown_label'].tolist()
             else:
                 auto_selected_answers = []
+
 
             # Bar Chart Answer Selection (with auto-selected answers)
             selected_answers = st.multiselect(
