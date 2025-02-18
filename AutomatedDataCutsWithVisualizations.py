@@ -147,13 +147,17 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
 
     # Editable bar labels
     edited_labels = []
-    for i, row in filtered_df.iterrows():
-        edited_label = st.text_input(
-            f"Edit label for '{row['answer_text']}'", 
-            value=row['answer_text'],
-            key=f"label_input_{i}"
-        )
+    cols = st.columns(2)  # Creates two columns
+
+    for i, row in enumerate(filtered_df.itertuples(), 1):
+        with cols[(i - 1) % 2]:  # Alternates between the two columns
+            edited_label = st.text_input(
+                f"Edit label for '{row.answer_text}'", 
+                value=row.answer_text,
+                key=f"label_input_{i}"
+            )
         edited_labels.append(edited_label)
+
 
     filtered_df["edited_text"] = edited_labels
 
