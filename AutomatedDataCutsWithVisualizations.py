@@ -211,6 +211,7 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
         ax.set_ylabel(" ")
         ax.set_title(chart_title)
         plt.xticks(x_pos, filtered_df["wrapped_text"], rotation=45, ha="right")
+        ax.set_yticks([])
     else:
         bar_shift = -bar_width * (num_metrics // 2)
         for metric, display, color, label in [
