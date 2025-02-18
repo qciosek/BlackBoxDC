@@ -318,19 +318,34 @@ def main():
             )
 
            
-           # Parent Dropdown for q_question_code should appear only after data is fetched
-            # Filter for unique q_question_code and s_question_text
+           # Filter for unique q_question_code and s_question_text
             unique_q_question_codes = question_df_all[['q_question_code', 's_question_text']].drop_duplicates()
 
-# Create the dropdown options as a combination of q_question_code and s_question_text
+            # Create the dropdown options as a combination of q_question_code and s_question_text
             q_question_code_options = ["No Question Code"] + sorted(
                 [f"{row.q_question_code} - {row.s_question_text}" for row in unique_q_question_codes.itertuples()]
             )
 
+# Mapping from combined string back to q_question_code for easy access
+            q_question_code_mapping = {
+                f"{row.q_question_code} - {row.s_question_text}": row.q_question_code
+                for row in unique_q_question_codes.itertuples()
+            }
+
+# Select Question Codes
             selected_q_question_codes = st.multiselect(
                 "Optional: Select Question Codes to Auto-Select Answers:",
                 q_question_code_options
             )
+
+# Extract the corresponding q_question_codes for the selected dropdown values
+            selected_q_question_codes_only = [
+                q_question_code_mapping[option] for option in selected_q_question_codes if option != "No Question Code"
+            ]
+
+# Now the selected_q_question_codes_only contains only the q_question_codes
+# You can proceed with the rest of your auto-selection logic using selected_q_question_codes_only
+
 
 
 # Auto-select answers if question codes are chosen
