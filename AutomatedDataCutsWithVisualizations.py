@@ -240,7 +240,7 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
         plt.yticks(x_pos, filtered_df["wrapped_text"])
         ax.set_xticks([])
     ax.set_ylim(0, y_limit) if orientation == "Vertical" else ax.set_xlim(0, y_limit)
-    ax.legend()
+    ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=3)
     st.pyplot(fig)
 
 # Main function
