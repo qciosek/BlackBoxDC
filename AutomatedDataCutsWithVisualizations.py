@@ -180,7 +180,7 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
     # Plot configuration
     num_metrics = sum([display_avg_yes, display_cut_percentage, display_index])
     bar_width = 0.7 / num_metrics
-    fig, ax = plt.subplots(figsize=(10, 6))
+    fig, ax = plt.subplots(figsize=(12, 8))
     x_pos = range(len(filtered_df))
 
     y_max = 0
