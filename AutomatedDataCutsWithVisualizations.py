@@ -1,6 +1,5 @@
 import streamlit as st
 import pymysql
-import bcrypt
 import pandas as pd
 import io
 import matplotlib.pyplot as plt
@@ -37,12 +36,6 @@ def apply_custom_theme():
         </style>
     """, unsafe_allow_html=True)
 
-# bcrypt functions for password hashing and verification
-def hash_password(password):
-    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
-
-def verify_password(stored_hash, provided_password):
-    return bcrypt.checkpw(provided_password.encode(), stored_hash.encode())
 
 # Connect to the MySQL database
 def connect_to_db():
@@ -59,81 +52,7 @@ def connect_to_db():
         port=3306,
     )
     return connection
-
-# Authenticate user
-def authenticate_user(username, password):
-    conn = connect_to_db()
-    cursor = conn.cursor()
-
-    # Query to get the stored password hash for the user
-    cursor.execute("SELECT password_hash FROM users WHERE username = %s", (username,))
-    result = cursor.fetchone()
-    conn.close()
-
-    # If user exists and password matches, return True
-    if result and verify_password(result[0], password):
-        return True
-    return False
-
-# Register user
-def register_user(username, password):
-    # Hash the password before storing
-    password_hash = hash_password(password)
-    
-    # Connect to the database
-    conn = connect_to_db()
-    cursor = conn.cursor()
-
-    # Check if the username already exists
-    cursor.execute("SELECT username FROM users WHERE username = %s", (username,))
-    if cursor.fetchone():
-        conn.close()
-        return False  # Username already exists
-    
-    # Insert new user into the database
-    cursor.execute("INSERT INTO users (username, password_hash) VALUES (%s, %s)", (username, password_hash))
-    conn.commit()
-    conn.close()
-    return True
-
-# Streamlit login and registration form
-st.title("User Authentication")
-
-# Login form
-login_form = st.form(key="login_form")
-username_login = login_form.text_input("Username")
-password_login = login_form.text_input("Password", type="password")
-login_button = login_form.form_submit_button("Login")
-
-# Registration form
-register_form = st.form(key="register_form")
-username_register = register_form.text_input("Username")
-password_register = register_form.text_input("Password", type="password")
-register_button = register_form.form_submit_button("Register")
-
-# Handle login logic
-if login_button:
-    if authenticate_user(username_login, password_login):
-        st.success(f"Welcome back, {username_login}!")
-        st.session_state["authenticated"] = True
-    else:
-        st.error("Invalid username or password")
-
-# Handle registration logic
-if register_button:
-    if len(username_register) < 3 or len(password_register) < 6:
-        st.error("Username must be at least 3 characters and password at least 6 characters.")
-    elif register_user(username_register, password_register):
-        st.success(f"User {username_register} registered successfully! Please log in.")
-    else:
-        st.error("Username already exists, please choose a different one.")
-
-# Show app content only if authenticated
-if "authenticated" in st.session_state and st.session_state["authenticated"]:
-    st.write("### Your App Content Goes Here")
-else:
-    st.warning("Please log in to access the app.")
-
+connection = connect_to_db()
 
 # Clear Streamlit cache
 st.cache_data.clear()
