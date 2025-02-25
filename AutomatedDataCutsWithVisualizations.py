@@ -138,7 +138,7 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
     st.subheader("Edit Chart Labels and Title")
 
     # Editable chart title
-    chart_title = st.text_input("Edit Bar Chart Title", value="**Bar Chart Visualization**")
+    chart_title = st.text_input("Edit Bar Chart Title", value="Bar Chart Visualization")
 
     # Editable legend labels
     legend_cut_percentage = st.text_input("Legend for Data Cut Percentages", value="Data Cut Percentages")
