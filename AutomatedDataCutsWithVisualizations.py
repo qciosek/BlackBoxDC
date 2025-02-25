@@ -236,7 +236,7 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
                 bar_shift += bar_width
 
         ax.set_xlabel(" ")
-        ax.set_title(chart_title)
+        ax.set_title(chart_title, fontweight='bold')
         plt.yticks(x_pos, filtered_df["wrapped_text"])
         ax.set_xticks([])
     ax.set_ylim(0, y_limit) if orientation == "Vertical" else ax.set_xlim(0, y_limit)
