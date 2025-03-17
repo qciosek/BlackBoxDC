@@ -346,7 +346,7 @@ def main():
             ]
 
 # Function to get top 10 answers
-            def get_top_10_answers(selected_category, connection):
+            def get_top_10_answers(connection):
                 try:
                     if not selected_category:
                         return []  # Avoid query errors if category is missing
@@ -370,7 +370,7 @@ def main():
 
             if "Top 10 Brands" in selected_q_question_codes_display:
                 if selected_category:
-                    selected_answers = get_top_10_answers(selected_category, connection)
+                    selected_answers = get_top_10_answers(connection)
 
             elif selected_q_question_codes:
     # Auto-select answers based on selected q_question_codes
