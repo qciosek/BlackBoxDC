@@ -348,6 +348,7 @@ def main():
 # Function to get top 10 answers
             def get_top_10_answers(selected_category):
                 if not selected_category:
+                    st.error("Invalid Category")
                     return []  # Avoid query errors if category is missing
 
                 query = f"""
