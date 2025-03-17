@@ -355,7 +355,7 @@ def main():
                     SELECT question_code, answer_text
                     FROM responses
                     WHERE q_question_code IN ('Q27', 'Q28', 'Q29', 'Q30', 'Q31', 'Q32', 'Q33', 'Q34', 'Q35', 'Q36', 'Q37', 'Q38', 'Q39')
-                    ORDER BY index DESC
+                    ORDER BY 'index' DESC
                     LIMIT 10
                     """
                     df_top_10 = pd.read_sql(query, connection)  # Fetch results
