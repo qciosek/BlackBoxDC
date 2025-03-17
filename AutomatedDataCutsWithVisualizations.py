@@ -174,7 +174,9 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
         sort_column = 'avg_yes_percentage_numeric'
     elif display_index:
         sort_column = 'index'
-
+    if not sort_column:
+    sort_column = 'avg_yes_percentage_numeric'
+    
     filtered_df.sort_values(by=sort_column, ascending=True, inplace=True)
 
     # Plot configuration
