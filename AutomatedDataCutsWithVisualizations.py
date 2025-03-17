@@ -352,7 +352,7 @@ def main():
                         return []  # Avoid query errors if category is missing
 
                     query = f"""
-                    SELECT question_code, answer_text, {selected_category}
+                    SELECT question_code, answer_text
                     FROM responses
                     WHERE q_question_code IN ('Q27', 'Q28', 'Q29', 'Q30', 'Q31', 'Q32', 'Q33', 'Q34', 'Q35', 'Q36', 'Q37', 'Q38', 'Q39')
                     ORDER BY index DESC
