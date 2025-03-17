@@ -346,27 +346,31 @@ def main():
             ]
 
 # Function to get top 10 answers
-            def get_top_10_answers(selected_category):
-                if not selected_category:
-                    st.error("Invalid Category")
-                    return []  # Avoid query errors if category is missing
+            def get_top_10_answers(selected_category, connection):
+                try:
+                    if not selected_category:
+                        return []  # Avoid query errors if category is missing
 
-                query = f"""
-                SELECT question_code, answer_text, {selected_category}
-                FROM responses
-                WHERE q_question_code IN ('Q27', 'Q28', 'Q29', 'Q30', 'Q31', 'Q32', 'Q33', 'Q34', 'Q35', 'Q36', 'Q37', 'Q38', 'Q39')
-                ORDER BY index DESC
-                LIMIT 10
-                """
-                df_top_10 = pd.read_sql(query, connection)  # Fetch results
-                return df_top_10["question_code"].tolist()
+                    query = f"""
+                    SELECT question_code, answer_text, {selected_category}
+                    FROM responses
+                    WHERE q_question_code IN ('Q27', 'Q28', 'Q29', 'Q30', 'Q31', 'Q32', 'Q33', 'Q34', 'Q35', 'Q36', 'Q37', 'Q38', 'Q39')
+                    ORDER BY index DESC
+                    LIMIT 10
+                    """
+                    df_top_10 = pd.read_sql(query, connection)  # Fetch results
+                    return df_top_10["question_code"].tolist()
+                except Exception as e:
+                    st.error(f"Error in fetching top 10 answers: {e}")
+                    return []
+
 
 # Determine selected answers
             selected_answers = []
 
             if "Top 10 Brands" in selected_q_question_codes_display:
                 if selected_category:
-                    selected_answers = get_top_10_answers(selected_category)
+                    selected_answers = get_top_10_answers(selected_category, connection)
 
             elif selected_q_question_codes:
     # Auto-select answers based on selected q_question_codes
