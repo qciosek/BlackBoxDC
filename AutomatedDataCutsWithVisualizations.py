@@ -346,6 +346,7 @@ def main():
 
 # Function to get top 10 answers
             def get_top_10_answers(selected_category):
+                connection = connect_to_db()
                 if not selected_category:
                     return []  # Avoid query errors if category is missing
 
