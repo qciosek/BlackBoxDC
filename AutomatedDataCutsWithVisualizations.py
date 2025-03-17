@@ -415,7 +415,7 @@ def main():
             st.write("No data found for selected questions.")
     else:
         st.write("Please select at least one question.")
-
+    connection.close()
 if __name__ == "__main__":
     main()
 
