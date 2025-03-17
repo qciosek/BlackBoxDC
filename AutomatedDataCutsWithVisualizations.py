@@ -366,7 +366,7 @@ def main():
 
             if "Top 10 Brands" in selected_q_question_codes_display:
                 if selected_category:
-                    selected_answers = get_top_10_answers(selected_category, connection)
+                    selected_answers = get_top_10_answers(selected_category)
 
             elif selected_q_question_codes:
     # Auto-select answers based on selected q_question_codes
