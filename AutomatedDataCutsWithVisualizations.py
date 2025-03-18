@@ -323,9 +323,10 @@ def main():
 
             # Create unique list of q_question_code and s_question_text
             # Fetch unique q_question_codes and their text
+          # Ensure s_question_text is retrieved in question_df_all
             unique_q_question_codes = question_df_all[['q_question_code', 's_question_text']].drop_duplicates()
 
-            # Create a mapping for the dropdown: "q_question_code - s_question_text" (display) -> q_question_code (stored)
+# Create a mapping for the dropdown: "q_question_code - s_question_text" (display) -> q_question_code (stored)
             q_question_code_mapping = {
                 f"{row.q_question_code} - {row.s_question_text}": row.q_question_code
                 for row in unique_q_question_codes.itertuples()
@@ -334,49 +335,55 @@ def main():
 # Create dropdown options list
             q_question_code_options = ["No Question Code", "Top 10 Brands"] + list(q_question_code_mapping.keys())
 
+# New dropdown for selecting a category (above the q_question_code dropdown)
+            selected_category = st.selectbox(
+                "Optional: Select Category to Auto-Select Question Codes:",
+                ["None"] + sorted(question_df_all["category"].unique())
+            )
+
+# Auto-select question codes if a category is selected (top 10 by index)
+            if selected_category and selected_category != "None":
+                auto_selected_q_question_codes = (
+                    question_df_all[question_df_all["category"] == selected_category]
+                    .sort_values(by="index", ascending=False)  # Sort by index (descending)
+                    .head(10)["q_question_code"]
+                    .tolist()
+                )
+            else:
+                auto_selected_q_question_codes = []
+
 # Dropdown for selecting question codes
             selected_q_question_codes_display = st.multiselect(
                 "Optional: Select Question Codes to Auto-Select Answers:",
                 q_question_code_options
             )
 
-# Convert display values back to actual q_question_code (excluding "No Question Code")
+# Convert display values back to actual q_question_codes (excluding "No Question Code")
             selected_q_question_codes = [
                 q_question_code_mapping[option] for option in selected_q_question_codes_display if option in q_question_code_mapping
             ]
 
-# Function to get top 10 answers
-            def get_top_10_answers(connection):
-                try:
-                    if not selected_category:
-                        return []  # Avoid query errors if category is missing
-
-                    query = f"""
-                    SELECT question_code, answer_text
-                    FROM responses
-                    WHERE q_question_code IN ('Q27', 'Q28', 'Q29', 'Q30', 'Q31', 'Q32', 'Q33', 'Q34', 'Q35', 'Q36', 'Q37', 'Q38', 'Q39')
-                    ORDER BY 'index' DESC
-                    LIMIT 10
-                    """
-                    df_top_10 = pd.read_sql(query, connection)  # Fetch results
-                    return df_top_10["question_code"].tolist()
-                except Exception as e:
-                    st.error(f"Error in fetching top 10 answers: {e}")
-                    return []
-
-
-# Determine selected answers
-            selected_answers = []
-
+# If "Top 10 Brands" is selected, auto-select Q27-Q39
             if "Top 10 Brands" in selected_q_question_codes_display:
-                if selected_category:
-                    selected_answers = get_top_10_answers(connection)
+                selected_q_question_codes.extend(["Q27", "Q28", "Q29", "Q30", "Q31", "Q32", "Q33", "Q34", "Q35", "Q36", "Q37", "Q38", "Q39"])
 
-            elif selected_q_question_codes:
-    # Auto-select answers based on selected q_question_codes
-                selected_answers = question_df_all[
-                    question_df_all['q_question_code'].isin(selected_q_question_codes)
-                ]['dropdown_label'].tolist()
+# Merge auto-selected category-based q_question_codes
+            selected_q_question_codes.extend(auto_selected_q_question_codes)
+
+# Remove duplicates
+            selected_q_question_codes = list(set(selected_q_question_codes))
+
+# Determine selected answers based on q_question_codes
+            selected_answers = question_df_all[
+                question_df_all['q_question_code'].isin(selected_q_question_codes)
+            ]['dropdown_label'].tolist()
+
+# Sort answers by index and apply top 10 limit
+            selected_answers = sorted(
+                selected_answers,
+                key=lambda x: question_df_all[question_df_all['dropdown_label'] == x]['index'].values[0],
+                reverse=True
+            )[:10]
 
 # Bar Chart Answer Selection (with auto-selected answers)
             selected_answers = st.multiselect(
@@ -386,6 +393,7 @@ def main():
             )
 
             st.subheader("Bar Chart Visualization")
+
 
             
             display_avg_yes = st.checkbox("Display Total Sample Percentages", value=False)
