@@ -276,7 +276,7 @@ def main():
     question_df = pd.read_sql(question_query, connection)
 
     question_query_all = """
-    SELECT question_code, answer_text, question_text, q_question_code, s_question_text, question_category
+    SELECT question_code, answer_text, question_text, q_question_code, s_question_text, question_category AS category
     FROM question_mapping
     ORDER BY CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(question_code, 'Q', -1), '_', 1) AS UNSIGNED), question_code
     """
