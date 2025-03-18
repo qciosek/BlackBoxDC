@@ -319,80 +319,45 @@ def main():
                 file_name="exported_data.csv",
                 mime="text/csv"
             )
-           # Ensure s_question_text is retrieved in question_df_all
-
-            # Create unique list of q_question_code and s_question_text
-            # Fetch unique q_question_codes and their text
-          # Ensure s_question_text is retrieved in question_df_all
+             
             unique_q_question_codes = question_df_all[['q_question_code', 's_question_text']].drop_duplicates()
-
-# Create a mapping for the dropdown: "q_question_code - s_question_text" (display) -> q_question_code (stored)
-            q_question_code_mapping = {
-                f"{row.q_question_code} - {row.s_question_text}": row.q_question_code
-                for row in unique_q_question_codes.itertuples()
-            }
-
-# Create dropdown options list
-            q_question_code_options = ["No Question Code", "Top 10 Brands"] + list(q_question_code_mapping.keys())
-
-# New dropdown for selecting a category (above the q_question_code dropdown)
-            selected_category = st.selectbox(
-                "Optional: Select Category to Auto-Select Question Codes:",
-                ["None"] + sorted(question_df_all["category"].dropna().unique())
-            )
-
-# Auto-select question codes if a category is selected (top 10 by index)
-            if selected_category and selected_category != "None":
-                auto_selected_q_question_codes = (
-                    question_df_all[question_df_all["category"] == selected_category]
-                    .sort_values(by="index", ascending=False)  # Sort by index (descending)
-                    .head(10)["q_question_code"]
-                    .tolist()
-                )
-            else:
-                auto_selected_q_question_codes = []
-
-# Dropdown for selecting question codes
-            selected_q_question_codes_display = st.multiselect(
-                "Optional: Select Question Codes to Auto-Select Answers:",
-                q_question_code_options
-            )
-
-# Convert display values back to actual q_question_codes (excluding "No Question Code")
-            selected_q_question_codes = [
-                q_question_code_mapping[option] for option in selected_q_question_codes_display if option in q_question_code_mapping
-            ]
-
-# If "Top 10 Brands" is selected, auto-select Q27-Q39
-            if "Top 10 Brands" in selected_q_question_codes_display:
-                selected_q_question_codes.extend(["Q27", "Q28", "Q29", "Q30", "Q31", "Q32", "Q33", "Q34", "Q35", "Q36", "Q37", "Q38", "Q39"])
-
-# Merge auto-selected category-based q_question_codes
-            selected_q_question_codes.extend(auto_selected_q_question_codes)
-
-# Remove duplicates
-            selected_q_question_codes = list(set(selected_q_question_codes))
-
-# Determine selected answers based on q_question_codes
-            selected_answers = question_df_all[
-                question_df_all['q_question_code'].isin(selected_q_question_codes)
-            ]['dropdown_label'].tolist()
-
-# Sort answers by index and apply top 10 limit
-            selected_answers = sorted(
-                selected_answers,
-                key=lambda x: question_df_all[question_df_all['dropdown_label'] == x]['index'].values[0],
-                reverse=True
-            )[:10]
-
-# Bar Chart Answer Selection (with auto-selected answers)
-            selected_answers = st.multiselect(
-                "Select answers to display in the bar chart:",
-                question_df_all['dropdown_label'].tolist(),
-                default=selected_answers
-            )
-
-            st.subheader("Bar Chart Visualization")
+ 
+             # Create dropdown options as "q_question_code - s_question_text" (display) but store q_question_code for logic
+             q_question_code_mapping = {
+                 f"{row.q_question_code} - {row.s_question_text}": row.q_question_code
+                 for row in unique_q_question_codes.itertuples()
+             }
+ 
+             # Create dropdown options list
+             q_question_code_options = ["No Question Code"] + list(q_question_code_mapping.keys())
+ 
+             # Select Question Codes
+             selected_q_question_codes_display = st.multiselect(
+                 "Optional: Select Question Codes to Auto-Select Answers:",
+                 q_question_code_options
+             )
+ 
+             # Convert selected display values back to actual q_question_code
+             selected_q_question_codes = [
+                 q_question_code_mapping[option] for option in selected_q_question_codes_display if option != "No Question Code"
+             ]
+ 
+             # Auto-select answers based on selected q_question_codes
+             if selected_q_question_codes:
+                 auto_selected_answers = question_df_all[
+                     question_df_all['q_question_code'].isin(selected_q_question_codes)
+                 ]['dropdown_label'].tolist()
+             else:
+                 auto_selected_answers = []
+ 
+             # Bar Chart Answer Selection (with auto-selected answers)
+             selected_answers = st.multiselect(
+                 "Select answers to display in the bar chart:",
+                 question_df_all['dropdown_label'].tolist(),
+                 default=auto_selected_answers  # Auto-select answers if applicable
+             )
+ 
+             st.subheader("Bar Chart Visualization")
 
 
             
