@@ -338,7 +338,7 @@ def main():
 # New dropdown for selecting a category (above the q_question_code dropdown)
             selected_category = st.selectbox(
                 "Optional: Select Category to Auto-Select Question Codes:",
-                ["None"] + sorted(question_df_all["category"].unique())
+                ["None"] + sorted(question_df_all["category"].dropna().unique())
             )
 
 # Auto-select question codes if a category is selected (top 10 by index)
