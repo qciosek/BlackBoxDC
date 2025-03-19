@@ -250,11 +250,14 @@ def main():
     connection = connect_to_db()
     st.markdown(
     """
-    <h1 style="margin bottom: 5px; text-align: center; font-size: 42px;">Black Box Data</h1>
-    <h2 style="margin top: 0px; text-align: center; font-size: 32px;">"Sports Fandom Study" for World's Greatest</h2>
+    <div style="text-align: center;">
+        <h1 style="font-size: 36px; margin-bottom: 0px;">Black Box Data</h1>
+        <h2 style="font-size: 28px; margin-top: 5px;">"Sports Fandom Study" for World's Greatest</h2>
+    </div>
     """,
     unsafe_allow_html=True
 )
+
 
 
     # Apply custom theme
