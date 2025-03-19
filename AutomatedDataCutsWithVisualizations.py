@@ -251,8 +251,8 @@ def main():
     st.markdown(
     """
     <div style="text-align: center;">
-        <h1 style="font-size: 38px; line-height: .1;">Black Box Data</h1>
-        <h2 style="font-size: 28px; line-height: .005: 0px;">
+        <h1 style="font-size: 38px; margin: 0; padding: 0;">Black Box Data</h1>
+        <h2 style="font-size: 28px; margin: 0; padding: 0;">
             <em>"Sports Fandom Study"</em> for World's Greatest</h2>
     </div>
     """,
