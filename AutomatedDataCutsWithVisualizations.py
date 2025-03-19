@@ -252,7 +252,7 @@ def main():
     """
     <div style="text-align: center;">
         <h1 style="font-size: 36px; margin-bottom: 0px;">Black Box Data</h1>
-        <h2 style="font-size: 28px; margin-top: 5px;">"Sports Fandom Study" for World's Greatest</h2>
+        <h2 style="font-size: 28px; margin-top: 2px;">"Sports Fandom Study" for World's Greatest</h2>
     </div>
     """,
     unsafe_allow_html=True
