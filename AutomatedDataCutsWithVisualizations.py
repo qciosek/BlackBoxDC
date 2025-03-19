@@ -248,7 +248,7 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
 # Main function
 def main():
     connection = connect_to_db()
-    st.title("Black Box Data Sports Fandom Study for World's Greatest")
+    st.title("Black Box Data \"Sports Fandom Study\" for World's Greatest")
 
     # Apply custom theme
     apply_custom_theme()
