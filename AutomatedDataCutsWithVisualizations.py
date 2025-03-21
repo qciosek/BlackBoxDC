@@ -81,7 +81,7 @@ def fetch_data_and_sample_size(connection, selected_questions):
     sample_size = sample_size_df['sample_size'][0] if not sample_size_df.empty else 0
 
     if question_code_filter:
-        # Main query for data
+    # Main query for data
         query = f"""
         WITH filtered_responses AS (
             SELECT participant_id
@@ -108,7 +108,7 @@ def fetch_data_and_sample_size(connection, selected_questions):
             WHERE LOWER(response_text) IN ('yes', 'no')
             GROUP BY question_code
         )
-    
+
         SELECT 
             qm.question_code, 
             CASE 
@@ -125,13 +125,20 @@ def fetch_data_and_sample_size(connection, selected_questions):
         FROM cut_percentage cp
         JOIN average_answer aa ON cp.question_code = aa.question_code
         JOIN question_mapping qm ON cp.question_code = qm.question_code
-        ORDER BY CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(qm.question_code, 'Q', -1), '_', 1) AS UNSIGNED), qm.question_code;
+        ORDER BY 
+            CASE 
+                WHEN qm.question_code IN ('Q27', 'Q28', 'Q29', 'Q30', 'Q31', 'Q32', 'Q33', 'Q34', 'Q35', 'Q36', 'Q37', 'Q38', 'Q39') THEN `index`
+                ELSE CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(qm.question_code, 'Q', -1), '_', 1) AS UNSIGNED)
+            END DESC, 
+            qm.question_code;
         """
     else:
         query = "SELECT * FROM responses WHERE 1=0"
 
     df = pd.read_sql(query, connection)
     return df, sample_size
+
+
 
 # Plot bar chart with editable labels
 def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, display_avg_yes, display_index, bar_color_cut, bar_color_yes, bar_color_index, orientation):
