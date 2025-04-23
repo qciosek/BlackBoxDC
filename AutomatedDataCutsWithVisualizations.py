@@ -317,7 +317,7 @@ def main():
     with st.expander("See detailed explanation"):
         st.write("""
         What is a data cut?
-        A data cut is our way of isolating audiences to reveal insights about their habits and preferences. We do this by first choosing people who selected yes to certain answers in the study to then look at the performance of other answers. In the first section of our tool, you select the answer or answers to define the group you are trying to isolate, once selected, the rest of the answers appear below displaying the percentage of people who selected yes to each answer from the whole study sample (Total Sample Percentage) next to the percentage of people who selected yes to each answer from the group you isolated (Cut Percentage). In the last column, index is displayed.
+        A data cut is our way of isolating audiences to reveal insights about their habits and preferences. We do this by first choosing people who selected yes to certain answers in this study to then look at the performance of other answers. In the first section of our tool, you select the answer or answers to define the group you are trying to isolate. Once selected, the rest of the answers appear below displaying the percentage of people who selected yes to each answer from the whole study sample (Total Sample Percentage) next to the percentage of people who selected yes to each answer from the group you isolated (Cut Percentage). In the last column, index is displayed.
 
         Glossary:
         
