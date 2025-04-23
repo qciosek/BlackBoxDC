@@ -314,7 +314,30 @@ def main():
         for q in [question_selected_1, question_selected_2, question_selected_3]
         if q != "No Answer"
     ]
+    with st.expander("See detailed explanation"):
+        st.write("""
+        What is a data cut?
+        A data cut is our way of isolating audiences to reveal insights about their habits and preferences. We do this by first choosing people who selected yes to certain answers in the study to then look at the performance of other answers. In the first section of our tool, you select the answer or answers to define the group you are trying to isolate, once selected, the rest of the answers appear below displaying the percentage of people who selected yes to each answer from the whole study sample (Total Sample Percentage) next to the percentage of people who selected yes to each answer from the group you isolated (Cut Percentage). In the last column, index is displayed.
 
+        Glossary:
+        
+        Total Sample Percentage: Used for defining the performance of an answer with all respondents.
+
+        Cut Percentage: Used for defining the performance of an answer with a selected audience.
+           
+        Index: Used to compare the performance of an answer with a selected audience to its performance with all respondents.
+
+
+        Formulas: 
+                      
+        Total Sample Percentage = (# of people who selected yes to that answer)/(Total study sample size)
+
+        Cut Percentage = (# of people who said yes to both that answer and the answer(s) chosen in the first drop down menus)/(# of people who said yes to the answer(s) chosen in the first drop down menu)
+
+        Index = (Cut Percentage)/(Total Sample Percentage) * 100 
+                 
+        (If index = 100, then equal performance with selected audience and all respondents)
+    """)
     # Fetch data and sample size after questions are selected
     if selected_questions:
         df, sample_size = fetch_data_and_sample_size(connection, selected_questions)
