@@ -67,7 +67,7 @@ def fetch_data_and_sample_size(connection, selected_questions):
         SELECT COUNT(DISTINCT participant_id) AS sample_size
         FROM (
             SELECT participant_id
-            FROM responses
+            FROM responses_1
             WHERE LOWER(response_text) = 'yes'
             AND question_code IN ('{question_code_filter}')
             GROUP BY participant_id
@@ -85,7 +85,7 @@ def fetch_data_and_sample_size(connection, selected_questions):
         query = f"""
         WITH filtered_responses AS (
             SELECT participant_id
-            FROM responses
+            FROM responses_1
             WHERE LOWER(response_text) = 'yes'
             AND question_code IN ('{question_code_filter}')
             GROUP BY participant_id
@@ -97,14 +97,14 @@ def fetch_data_and_sample_size(connection, selected_questions):
                 ROUND(COUNT(CASE WHEN LOWER(response_text) = 'yes' THEN 1 END) * 100.0 / 
                       COUNT(CASE WHEN LOWER(response_text) IN ('yes', 'no') THEN 1 END)) AS cutpercentage
             FROM filtered_responses fr
-            JOIN responses r ON fr.participant_id = r.participant_id
+            JOIN responses_1 r ON fr.participant_id = r.participant_id
             GROUP BY question_code
         ),
         average_answer AS (
             SELECT
                 question_code,
                 ROUND(AVG(CASE WHEN LOWER(response_text) = 'yes' THEN 1 ELSE 0 END) * 100.0) AS avg_yes_percentage
-            FROM responses
+            FROM responses_1
             WHERE LOWER(response_text) IN ('yes', 'no')
             GROUP BY question_code
         )
@@ -133,7 +133,7 @@ def fetch_data_and_sample_size(connection, selected_questions):
             qm.question_code;
         """
     else:
-        query = "SELECT * FROM responses WHERE 1=0"
+        query = "SELECT * FROM responses_1 WHERE 1=0"
 
     df = pd.read_sql(query, connection)
     return df, sample_size
@@ -275,7 +275,7 @@ def main():
 
     # Fetch categories
     category_query = """
-    SELECT DISTINCT question_category FROM question_mapping
+    SELECT DISTINCT question_category FROM question_mapping_1
     ORDER BY question_category
     """
     category_df = pd.read_sql(category_query, connection)
@@ -287,7 +287,7 @@ def main():
     # Fetch question data based on the selected category
     question_query = f"""
     SELECT question_code, answer_text, question_text, q_question_code
-    FROM question_mapping
+    FROM question_mapping_1
     WHERE question_category LIKE '{selected_category}' OR '{selected_category}' = 'All Categories'
     ORDER BY CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(question_code, 'Q', -1), '_', 1) AS UNSIGNED), question_code
     """
@@ -295,7 +295,7 @@ def main():
 
     question_query_all = """
     SELECT question_code, answer_text, question_text, q_question_code, s_question_text, question_category AS category
-    FROM question_mapping
+    FROM question_mapping_1
     ORDER BY CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(question_code, 'Q', -1), '_', 1) AS UNSIGNED), question_code
     """
     question_df_all = pd.read_sql(question_query_all, connection)
