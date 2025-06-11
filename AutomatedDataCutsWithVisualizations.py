@@ -124,7 +124,7 @@ def fetch_data_and_sample_size(connection, selected_questions):
             END AS `index`
         FROM cut_percentage cp
         JOIN average_answer aa ON cp.question_code = aa.question_code
-        JOIN question_mapping qm ON cp.question_code = qm.question_code
+        JOIN question_mapping_1 qm ON cp.question_code = qm.question_code
         ORDER BY 
             CASE 
                 WHEN qm.q_question_code IN ('Q27', 'Q28', 'Q29', 'Q30', 'Q31', 'Q32', 'Q33', 'Q34', 'Q35', 'Q36', 'Q37', 'Q38', 'Q39') THEN `index`
