@@ -269,7 +269,8 @@ def main():
     <div style="text-align: center;">
         <h1 style="font-size: 38px; margin: 0; padding: 0;">Black Box Data</h1>
         <h2 style="font-size: 28px; margin: 0; padding: 0;">
-            <em>"Sports Fandom Study"</em> for World's Greatest</h2>
+            <em>"The Smartest Way to Power Your Content Engine"</em> 
+        </h2>
     </div>
     """,
     unsafe_allow_html=True
