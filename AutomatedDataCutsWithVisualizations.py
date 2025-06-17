@@ -13,9 +13,9 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-dataset_option = st.sidebar.selectbox("Pick a dataset", ["Dataset 1", "Dataset 2"])
+dataset_option = st.sidebar.selectbox("Pick a dataset", ["Sports Fandom Study", "Content Fandom Study"])
 
-if dataset_option == "Dataset 1":
+if dataset_option == "Sports Fandom Study":
     responses_table = "responses_1"
     question_mapping_table = "question_mapping_1"
 else:
