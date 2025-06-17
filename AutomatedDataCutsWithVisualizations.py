@@ -13,6 +13,15 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+dataset_option = st.sidebar.selectbox("Pick a dataset", ["Dataset 1", "Dataset 2"])
+
+if dataset_option == "Dataset 1":
+    responses_table = "responses_1"
+    question_mapping_table = "question_mapping_1"
+else:
+    responses_table = "responses_2"
+    question_mapping_table = "question_mapping_2"
+
 # Function to apply user-customized theme
 def apply_custom_theme():
     background_color = st.sidebar.color_picker("Choose Background Color", "#f4f4f9")
@@ -67,7 +76,7 @@ def fetch_data_and_sample_size(connection, selected_questions):
         SELECT COUNT(DISTINCT participant_id) AS sample_size
         FROM (
             SELECT participant_id
-            FROM responses_1
+            FROM {responses_table}
             WHERE LOWER(response_text) = 'yes'
             AND question_code IN ('{question_code_filter}')
             GROUP BY participant_id
@@ -85,7 +94,7 @@ def fetch_data_and_sample_size(connection, selected_questions):
         query = f"""
         WITH filtered_responses AS (
             SELECT participant_id
-            FROM responses_1
+            FROM {responses_table}
             WHERE LOWER(response_text) = 'yes'
             AND question_code IN ('{question_code_filter}')
             GROUP BY participant_id
@@ -97,14 +106,14 @@ def fetch_data_and_sample_size(connection, selected_questions):
                 ROUND(COUNT(CASE WHEN LOWER(response_text) = 'yes' THEN 1 END) * 100.0 / 
                       COUNT(CASE WHEN LOWER(response_text) IN ('yes', 'no') THEN 1 END)) AS cutpercentage
             FROM filtered_responses fr
-            JOIN responses_1 r ON fr.participant_id = r.participant_id
+            JOIN {responses_table} r ON fr.participant_id = r.participant_id
             GROUP BY question_code
         ),
         average_answer AS (
             SELECT
                 question_code,
                 ROUND(AVG(CASE WHEN LOWER(response_text) = 'yes' THEN 1 ELSE 0 END) * 100.0) AS avg_yes_percentage
-            FROM responses_1
+            FROM {responses_table}
             WHERE LOWER(response_text) IN ('yes', 'no')
             GROUP BY question_code
         )
@@ -124,7 +133,7 @@ def fetch_data_and_sample_size(connection, selected_questions):
             END AS `index`
         FROM cut_percentage cp
         JOIN average_answer aa ON cp.question_code = aa.question_code
-        JOIN question_mapping_1 qm ON cp.question_code = qm.question_code
+        JOIN {question_mapping_table} qm ON cp.question_code = qm.question_code
         ORDER BY 
             CASE 
                 WHEN qm.q_question_code IN ('Q27', 'Q28', 'Q29', 'Q30', 'Q31', 'Q32', 'Q33', 'Q34', 'Q35', 'Q36', 'Q37', 'Q38', 'Q39') THEN `index`
@@ -274,8 +283,8 @@ def main():
     connection = connect_to_db()
 
     # Fetch categories
-    category_query = """
-    SELECT DISTINCT question_category FROM question_mapping_1
+    category_query = f"""
+    SELECT DISTINCT question_category FROM {question_mapping_table}
     ORDER BY question_category
     """
     category_df = pd.read_sql(category_query, connection)
@@ -287,15 +296,15 @@ def main():
     # Fetch question data based on the selected category
     question_query = f"""
     SELECT question_code, answer_text, question_text, q_question_code
-    FROM question_mapping_1
+    FROM {question_mapping_table}
     WHERE question_category LIKE '{selected_category}' OR '{selected_category}' = 'All Categories'
     ORDER BY CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(question_code, 'Q', -1), '_', 1) AS UNSIGNED), question_code
     """
     question_df = pd.read_sql(question_query, connection)
 
-    question_query_all = """
+    question_query_all = f"""
     SELECT question_code, answer_text, question_text, q_question_code, s_question_text, question_category AS category
-    FROM question_mapping_1
+    FROM {question_mapping_table}
     ORDER BY CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(question_code, 'Q', -1), '_', 1) AS UNSIGNED), question_code
     """
     question_df_all = pd.read_sql(question_query_all, connection)
@@ -437,4 +446,3 @@ def main():
     connection.close()
 if __name__ == "__main__":
     main()
-
