@@ -13,14 +13,21 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-dataset_option = st.sidebar.selectbox("Pick a dataset", ["Sports Fandom Study", "Content Fandom Study"])
+dataset_option = st.sidebar.selectbox(
+    "Pick a dataset",
+    ["Sports Fandom Study", "Content Fandom Study", "Young People Study"]
+)
 
 if dataset_option == "Sports Fandom Study":
     responses_table = "responses_1"
     question_mapping_table = "question_mapping_1"
-else:
+elif dataset_option == "Content Fandom Study":
     responses_table = "responses_2"
     question_mapping_table = "question_mapping_2"
+else:  # Test Dataset
+    responses_table = "responses_3"
+    question_mapping_table = "question_mapping_3"
+
 
 # Function to apply user-customized theme
 def apply_custom_theme():
