@@ -15,7 +15,7 @@ st.set_page_config(
 
 dataset_option = st.sidebar.selectbox(
     "Pick a dataset",
-    ["Sports Fandom Study", "Content Fandom Study", "Shooters TV Study" "Young People Study"]
+    ["Sports Fandom Study", "Content Fandom Study", "Shooters TV Study", "Young People Study"]
 )
 
 if dataset_option == "Sports Fandom Study":
