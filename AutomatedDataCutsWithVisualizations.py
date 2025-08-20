@@ -81,7 +81,7 @@ def fetch_data_and_sample_size(connection, selected_questions):
 
     question_code_filter = "', '".join(selected_questions)
     if question_code_filter:
-        # Calculate the sample size: Participants who said "Yes" to all selected questions
+        # Sample size: Participants who said "Yes" to all selected questions
         sample_size_query = f"""
         SELECT COUNT(DISTINCT participant_id) AS sample_size
         FROM (
@@ -100,53 +100,57 @@ def fetch_data_and_sample_size(connection, selected_questions):
     sample_size = sample_size_df['sample_size'][0] if not sample_size_df.empty else 0
 
     if question_code_filter:
-    # Main query for data
+        # Main query for data
         query = f"""
         WITH filtered_responses AS (
-    SELECT participant_id
-    FROM {responses_table}
-    WHERE response_text = 'yes'
-      AND question_code IN ('{question_code_filter}')
-    GROUP BY participant_id
-    HAVING COUNT(DISTINCT question_code) = {len(selected_questions)}
-)
-SELECT 
-    qm.question_code,
-    CASE 
-        WHEN LENGTH(qm.question_text) > 60 THEN CONCAT(LEFT(qm.question_text, 60), '...')
-        ELSE qm.question_text
-    END AS question_text,
-    qm.answer_text,
-    CONCAT(ROUND(SUM(CASE WHEN fr.participant_id IS NOT NULL AND r.response_text = 'yes' THEN 1 ELSE 0 END) * 100.0 /
-                 SUM(CASE WHEN fr.participant_id IS NOT NULL AND r.response_text IN ('yes','no') THEN 1 ELSE 0 END)), '%') AS cutpercentage,
-    CONCAT(ROUND(AVG(CASE WHEN r.response_text = 'yes' THEN 1 ELSE 0 END) * 100.0), '%') AS avg_yes_percentage,
-    CASE 
-        WHEN AVG(CASE WHEN r.response_text = 'yes' THEN 1 ELSE 0 END) = 0 THEN NULL
-        ELSE ROUND(
-            (SUM(CASE WHEN fr.participant_id IS NOT NULL AND r.response_text = 'yes' THEN 1 ELSE 0 END) * 100.0 /
-             SUM(CASE WHEN fr.participant_id IS NOT NULL AND r.response_text IN ('yes','no') THEN 1 ELSE 0 END))
-             /
-            (AVG(CASE WHEN r.response_text = 'yes' THEN 1 ELSE 0 END) * 100.0)
-            * 100
+            SELECT participant_id
+            FROM {responses_table}
+            WHERE response_text = 'yes'
+              AND question_code IN ('{question_code_filter}')
+            GROUP BY participant_id
+            HAVING COUNT(DISTINCT question_code) = {len(selected_questions)}
         )
-    END AS `index`
-FROM {responses_table} r
-LEFT JOIN filtered_responses fr ON r.participant_id = fr.participant_id
-JOIN {question_mapping_table} qm ON r.question_code = qm.question_code
-GROUP BY qm.question_code, qm.question_text, qm.answer_text
-ORDER BY 
-    CASE 
-        WHEN qm.q_question_code BETWEEN 'Q27' AND 'Q39' THEN `index`
-        ELSE CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(qm.question_code, 'Q', -1), '_', 1) AS UNSIGNED)
-    END DESC,
-    qm.question_code;
-
+        SELECT 
+            qm.question_code,
+            CASE 
+                WHEN LENGTH(qm.question_text) > 60 THEN CONCAT(LEFT(qm.question_text, 60), '...')
+                ELSE qm.question_text
+            END AS question_text,
+            qm.answer_text,
+            CONCAT(
+                ROUND(
+                    SUM(CASE WHEN fr.participant_id IS NOT NULL AND r.response_text = 'yes' THEN 1 ELSE 0 END) * 100.0 /
+                    SUM(CASE WHEN fr.participant_id IS NOT NULL AND r.response_text IN ('yes','no') THEN 1 ELSE 0 END)
+                ), '%'
+            ) AS cutpercentage,
+            CONCAT(r.avg_yes_percentage, '%') AS avg_yes_percentage,  -- retrieved from table only
+            CASE 
+                WHEN r.avg_yes_percentage = 0 THEN NULL
+                ELSE ROUND(
+                    (SUM(CASE WHEN fr.participant_id IS NOT NULL AND r.response_text = 'yes' THEN 1 ELSE 0 END) * 100.0 /
+                     SUM(CASE WHEN fr.participant_id IS NOT NULL AND r.response_text IN ('yes','no') THEN 1 ELSE 0 END))
+                     /
+                    r.avg_yes_percentage
+                    * 100
+                )
+            END AS `index`
+        FROM {responses_table} r
+        LEFT JOIN filtered_responses fr ON r.participant_id = fr.participant_id
+        JOIN {question_mapping_table} qm ON r.question_code = qm.question_code
+        GROUP BY qm.question_code, qm.question_text, qm.answer_text, r.avg_yes_percentage
+        ORDER BY 
+            CASE 
+                WHEN qm.q_question_code BETWEEN 'Q27' AND 'Q39' THEN `index`
+                ELSE CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(qm.question_code, 'Q', -1), '_', 1) AS UNSIGNED)
+            END DESC,
+            qm.question_code;
         """
     else:
         query = "SELECT * FROM responses_1 WHERE 1=0"
 
-    df = pd.read_sql(query, connection)
-    return df, sample_size
+    data_df = pd.read_sql(query, connection)
+    return data_df, sample_size
+
 
 
 
