@@ -79,18 +79,19 @@ st.cache_data.clear()
 # Fetch data and sample size
 def fetch_data_and_sample_size(connection, selected_questions):
     question_code_filter = "', '".join(selected_questions)
-    
+    num_questions = len(selected_questions)
+
     if question_code_filter:
-        # Calculate sample size: participants who said "Yes" to all selected questions
+        # Calculate the sample size: participants who said "Yes" to all selected questions
         sample_size_query = f"""
         SELECT COUNT(DISTINCT participant_id) AS sample_size
         FROM (
             SELECT participant_id
             FROM {responses_table}
             WHERE response_text = 'yes'
-            AND question_code IN ('{question_code_filter}')
+              AND question_code IN ('{question_code_filter}')
             GROUP BY participant_id
-            HAVING COUNT(DISTINCT question_code) = {len(selected_questions)}
+            HAVING COUNT(DISTINCT question_code) = {num_questions}
         ) AS filtered_participants
         """
     else:
@@ -100,15 +101,15 @@ def fetch_data_and_sample_size(connection, selected_questions):
     sample_size = sample_size_df['sample_size'][0] if not sample_size_df.empty else 0
 
     if question_code_filter:
-        # Main query: retrieve avg_yes_percentage from table directly
+        # Main query for data
         query = f"""
         WITH filtered_responses AS (
             SELECT participant_id
             FROM {responses_table}
             WHERE response_text = 'yes'
-            AND question_code IN ('{question_code_filter}')
+              AND question_code IN ('{question_code_filter}')
             GROUP BY participant_id
-            HAVING COUNT(DISTINCT question_code) = {len(selected_questions)}
+            HAVING COUNT(DISTINCT question_code) = {num_questions}
         )
         SELECT 
             qm.question_code,
@@ -120,18 +121,17 @@ def fetch_data_and_sample_size(connection, selected_questions):
             CONCAT(
                 ROUND(
                     SUM(CASE WHEN fr.participant_id IS NOT NULL AND r.response_text = 'yes' THEN 1 ELSE 0 END) * 100.0 /
-                    SUM(CASE WHEN fr.participant_id IS NOT NULL AND r.response_text IN ('yes','no') THEN 1 ELSE 0 END)
+                    SUM(CASE WHEN fr.participant_id IS NOT NULL AND r.response_text IN ('yes','no') THEN 1 ELSE 0 END), 2
                 ), '%'
             ) AS cutpercentage,
-            CONCAT(ROUND(r.avg_yes_percentage, 2), '%') AS avg_yes_percentage,
+            CONCAT(r.avg_yes_percentage, '%') AS avg_yes_percentage,
             CASE 
                 WHEN r.avg_yes_percentage = 0 THEN NULL
                 ELSE ROUND(
                     (SUM(CASE WHEN fr.participant_id IS NOT NULL AND r.response_text = 'yes' THEN 1 ELSE 0 END) * 100.0 /
                      SUM(CASE WHEN fr.participant_id IS NOT NULL AND r.response_text IN ('yes','no') THEN 1 ELSE 0 END))
-                     /
-                    r.avg_yes_percentage
-                    * 100
+                     / r.avg_yes_percentage
+                     * 100, 2
                 )
             END AS `index`
         FROM {responses_table} r
@@ -143,13 +143,14 @@ def fetch_data_and_sample_size(connection, selected_questions):
                 WHEN qm.q_question_code BETWEEN 'Q27' AND 'Q39' THEN `index`
                 ELSE CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(qm.question_code, 'Q', -1), '_', 1) AS UNSIGNED)
             END DESC,
-            qm.question_code;
+            qm.question_code
         """
     else:
         query = "SELECT * FROM responses_1 WHERE 1=0"
 
     data_df = pd.read_sql(query, connection)
     return data_df, sample_size
+
 
 
 
