@@ -89,7 +89,7 @@ def fetch_data_and_sample_size(connection, selected_questions):
         WHERE question_code IN ('{question_code_filter}')
         """
     else:
-        sample_size_query = "SELECT COUNT(DISTINCT participant_id) AS sample_size FROM responses"
+        sample_size_query = "SELECT COUNT(DISTINCT participant_id) AS sample_size FROM responses_1"
 
     sample_size_df = pd.read_sql(sample_size_query, connection)
     sample_size = sample_size_df['sample_size'][0] if not sample_size_df.empty else 0
