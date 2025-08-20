@@ -78,16 +78,16 @@ st.cache_data.clear()
 
 # Fetch data and sample size
 def fetch_data_and_sample_size(connection, selected_questions):
-
     question_code_filter = "', '".join(selected_questions)
+    
     if question_code_filter:
-        # Sample size: Participants who said "Yes" to all selected questions
+        # Calculate sample size: participants who said "Yes" to all selected questions
         sample_size_query = f"""
         SELECT COUNT(DISTINCT participant_id) AS sample_size
         FROM (
             SELECT participant_id
             FROM {responses_table}
-            WHERE LOWER(response_text) = 'yes'
+            WHERE response_text = 'yes'
             AND question_code IN ('{question_code_filter}')
             GROUP BY participant_id
             HAVING COUNT(DISTINCT question_code) = {len(selected_questions)}
@@ -100,13 +100,13 @@ def fetch_data_and_sample_size(connection, selected_questions):
     sample_size = sample_size_df['sample_size'][0] if not sample_size_df.empty else 0
 
     if question_code_filter:
-        # Main query for data
+        # Main query: retrieve avg_yes_percentage from table directly
         query = f"""
         WITH filtered_responses AS (
             SELECT participant_id
             FROM {responses_table}
             WHERE response_text = 'yes'
-              AND question_code IN ('{question_code_filter}')
+            AND question_code IN ('{question_code_filter}')
             GROUP BY participant_id
             HAVING COUNT(DISTINCT question_code) = {len(selected_questions)}
         )
@@ -123,7 +123,7 @@ def fetch_data_and_sample_size(connection, selected_questions):
                     SUM(CASE WHEN fr.participant_id IS NOT NULL AND r.response_text IN ('yes','no') THEN 1 ELSE 0 END)
                 ), '%'
             ) AS cutpercentage,
-            CONCAT(r.avg_yes_percentage, '%') AS avg_yes_percentage,  -- retrieved from table only
+            CONCAT(ROUND(r.avg_yes_percentage, 2), '%') AS avg_yes_percentage,
             CASE 
                 WHEN r.avg_yes_percentage = 0 THEN NULL
                 ELSE ROUND(
@@ -150,6 +150,7 @@ def fetch_data_and_sample_size(connection, selected_questions):
 
     data_df = pd.read_sql(query, connection)
     return data_df, sample_size
+
 
 
 
