@@ -78,10 +78,10 @@ st.cache_data.clear()
 
 # Fetch data and sample size
 def fetch_data_and_sample_size(connection, selected_questions):
-    # Ensure we have a proper filter string
+    # Prepare the question filter
     question_code_filter = "', '".join(selected_questions) if selected_questions else None
 
-    # Sample size query
+    # Query to get the sample size
     if question_code_filter:
         sample_size_query = f"""
         SELECT COUNT(DISTINCT participant_id) AS sample_size
@@ -94,7 +94,7 @@ def fetch_data_and_sample_size(connection, selected_questions):
     sample_size_df = pd.read_sql(sample_size_query, connection)
     sample_size = sample_size_df['sample_size'][0] if not sample_size_df.empty else 0
 
-    # Data query
+    # Query to retrieve data
     if question_code_filter:
         query = f"""
         WITH filtered_responses AS (
@@ -116,7 +116,7 @@ def fetch_data_and_sample_size(connection, selected_questions):
             GROUP BY r.question_code
         )
         SELECT 
-            qm.question_code, 
+            qm.question_code,
             CASE 
                 WHEN LENGTH(qm.question_text) > 60 THEN CONCAT(LEFT(qm.question_text, 60), '...')
                 ELSE qm.question_text
@@ -138,6 +138,7 @@ def fetch_data_and_sample_size(connection, selected_questions):
 
     df = pd.read_sql(query, connection)
     return df, sample_size
+
 
 
 
