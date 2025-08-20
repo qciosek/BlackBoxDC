@@ -134,7 +134,7 @@ def fetch_data_and_sample_size(connection, selected_questions):
         ORDER BY question_text, answer_text;
         """
     else:
-        query = "SELECT * FROM responses WHERE 1=0"  # Return empty DataFrame if no questions selected
+        query = "SELECT * FROM responses_1 WHERE 1=0"  # Return empty DataFrame if no questions selected
 
     df = pd.read_sql(query, connection)
     return df, sample_size
