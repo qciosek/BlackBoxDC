@@ -105,7 +105,7 @@ def fetch_data_and_sample_size(connection, selected_questions):
         WITH filtered_responses AS (
     SELECT participant_id
     FROM {responses_table}
-    WHERE LOWER(response_text) = 'yes'
+    WHERE response_text = 'yes'
       AND question_code IN ('{question_code_filter}')
     GROUP BY participant_id
     HAVING COUNT(DISTINCT question_code) = {len(selected_questions)}
@@ -117,16 +117,16 @@ SELECT
         ELSE qm.question_text
     END AS question_text,
     qm.answer_text,
-    CONCAT(ROUND(SUM(CASE WHEN fr.participant_id IS NOT NULL AND LOWER(r.response_text) = 'yes' THEN 1 ELSE 0 END) * 100.0 /
-                 SUM(CASE WHEN fr.participant_id IS NOT NULL AND LOWER(r.response_text) IN ('yes','no') THEN 1 ELSE 0 END)), '%') AS cutpercentage,
-    CONCAT(ROUND(AVG(CASE WHEN LOWER(r.response_text) = 'yes' THEN 1 ELSE 0 END) * 100.0), '%') AS avg_yes_percentage,
+    CONCAT(ROUND(SUM(CASE WHEN fr.participant_id IS NOT NULL AND r.response_text = 'yes' THEN 1 ELSE 0 END) * 100.0 /
+                 SUM(CASE WHEN fr.participant_id IS NOT NULL AND r.response_text IN ('yes','no') THEN 1 ELSE 0 END)), '%') AS cutpercentage,
+    CONCAT(ROUND(AVG(CASE WHEN r.response_text = 'yes' THEN 1 ELSE 0 END) * 100.0), '%') AS avg_yes_percentage,
     CASE 
-        WHEN AVG(CASE WHEN LOWER(r.response_text) = 'yes' THEN 1 ELSE 0 END) = 0 THEN NULL
+        WHEN AVG(CASE WHEN r.response_text = 'yes' THEN 1 ELSE 0 END) = 0 THEN NULL
         ELSE ROUND(
-            (SUM(CASE WHEN fr.participant_id IS NOT NULL AND LOWER(r.response_text) = 'yes' THEN 1 ELSE 0 END) * 100.0 /
-             SUM(CASE WHEN fr.participant_id IS NOT NULL AND LOWER(r.response_text) IN ('yes','no') THEN 1 ELSE 0 END))
+            (SUM(CASE WHEN fr.participant_id IS NOT NULL AND r.response_text = 'yes' THEN 1 ELSE 0 END) * 100.0 /
+             SUM(CASE WHEN fr.participant_id IS NOT NULL AND r.response_text IN ('yes','no') THEN 1 ELSE 0 END))
              /
-            (AVG(CASE WHEN LOWER(r.response_text) = 'yes' THEN 1 ELSE 0 END) * 100.0)
+            (AVG(CASE WHEN r.response_text = 'yes' THEN 1 ELSE 0 END) * 100.0)
             * 100
         )
     END AS `index`
