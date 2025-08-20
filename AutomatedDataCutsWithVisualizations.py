@@ -92,13 +92,14 @@ def fetch_data_and_sample_size(connection, selected_questions):
 
     if question_code_filter:
         query = f"""
+        query = f""
         WITH filtered_responses AS (
     SELECT DISTINCT participant_id
     FROM responses_1
     WHERE participant_id IN (
         SELECT participant_id
         FROM responses_1
-        WHERE question_code IN ({question_codes})
+        WHERE question_code IN ({question_code_filter})
           AND response_text = 'Yes'
     )
 ),
@@ -128,7 +129,8 @@ SELECT
 FROM cut_percentage cp
 JOIN question_mapping qm ON cp.question_code = qm.question_code
 ORDER BY question_text, answer_text;
-        """
+"""
+
     else:
         query = "SELECT * FROM responses_1 WHERE 1=0"
 
