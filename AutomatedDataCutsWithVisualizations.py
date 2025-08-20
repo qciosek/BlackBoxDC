@@ -85,7 +85,7 @@ def fetch_data_and_sample_size(connection, selected_questions):
     if question_code_filter:
         sample_size_query = f"""
         SELECT COUNT(DISTINCT participant_id) AS sample_size
-        FROM responses
+        FROM responses_1
         WHERE question_code IN ('{question_code_filter}')
         """
     else:
@@ -99,10 +99,10 @@ def fetch_data_and_sample_size(connection, selected_questions):
         query = f"""
         WITH filtered_responses AS (
             SELECT DISTINCT participant_id
-            FROM responses
+            FROM responses_1
             WHERE participant_id IN (
                 SELECT participant_id
-                FROM responses
+                FROM responses_1
                 WHERE question_code IN ('{question_code_filter}')
                 AND response_text = 'Yes'
             )
@@ -112,7 +112,7 @@ def fetch_data_and_sample_size(connection, selected_questions):
                 r.question_code,
                 ROUND(COUNT(CASE WHEN r.response_text = 'Yes' THEN 1 END) * 100.0 / COUNT(*)) AS cutpercentage
             FROM filtered_responses fr
-            JOIN responses r ON fr.participant_id = r.participant_id
+            JOIN responses_1 r ON fr.participant_id = r.participant_id
             GROUP BY r.question_code
         )
         SELECT 
