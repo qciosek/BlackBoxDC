@@ -93,45 +93,41 @@ def fetch_data_and_sample_size(connection, selected_questions):
     if question_code_filter:
         query = f"""
         WITH filtered_responses AS (
-            SELECT DISTINCT participant_id
-            FROM responses_1
-            WHERE participant_id IN (
-                SELECT participant_id
-                FROM responses_1
-                WHERE question_code IN ('{question_code_filter}')
-                AND response_text = 'Yes'
-            )
-        ),
-        cut_percentage AS (
-            SELECT 
-                r.question_code,
-                ROUND(COUNT(CASE WHEN r.response_text = 'Yes' THEN 1 END) * 100.0 / COUNT(*)) AS cutpercentage
-            FROM filtered_responses fr
-            JOIN responses_1 r ON fr.participant_id = r.participant_id
-            GROUP BY r.question_code
-        ),
-        avg_yes AS (
-            SELECT question_code, MAX(avg_yes_percentage) AS avg_yes_percentage
-            FROM responses_1
-            GROUP BY question_code
-        )
-        SELECT 
-            qm.question_code,
-            CASE 
-                WHEN LENGTH(qm.question_text) > 60 THEN CONCAT(LEFT(qm.question_text, 60), '...')
-                ELSE qm.question_text
-            END AS question_text,
-            qm.answer_text AS answer_text,
-            CONCAT(cp.cutpercentage, '%') AS cutpercentage,
-            CONCAT(ay.avg_yes_percentage, '%') AS avg_yes_percentage,
-            CASE 
-                WHEN ay.avg_yes_percentage = 0 THEN NULL
-                ELSE ROUND((cp.cutpercentage / ay.avg_yes_percentage) * 100)
-            END AS `index`
-        FROM cut_percentage cp
-        JOIN avg_yes ay ON cp.question_code = ay.question_code
-        JOIN question_mapping qm ON cp.question_code = qm.question_code
-        ORDER BY question_text, answer_text;
+    SELECT DISTINCT participant_id
+    FROM responses_1
+    WHERE participant_id IN (
+        SELECT participant_id
+        FROM responses_1
+        WHERE question_code IN ({question_codes})
+          AND response_text = 'Yes'
+    )
+),
+cut_percentage AS (
+    SELECT 
+        r.question_code,
+        ROUND(COUNT(CASE WHEN r.response_text = 'Yes' THEN 1 END) * 100.0 / COUNT(*)) AS cutpercentage,
+        r.avg_yes_percentage,
+        r.answer_text
+    FROM filtered_responses fr
+    JOIN responses_1 r ON fr.participant_id = r.participant_id
+    GROUP BY r.question_code, r.avg_yes_percentage, r.answer_text
+)
+SELECT 
+    qm.question_code,
+    CASE 
+        WHEN LENGTH(qm.question_text) > 60 THEN CONCAT(LEFT(qm.question_text, 60), '...')
+        ELSE qm.question_text
+    END AS question_text,
+    cp.answer_text,
+    CONCAT(cp.cutpercentage, '%') AS cutpercentage,
+    CONCAT(cp.avg_yes_percentage, '%') AS avg_yes_percentage,
+    CASE
+        WHEN cp.avg_yes_percentage = 0 THEN NULL
+        ELSE ROUND((cp.cutpercentage / cp.avg_yes_percentage) * 100)
+    END AS `index`
+FROM cut_percentage cp
+JOIN question_mapping qm ON cp.question_code = qm.question_code
+ORDER BY question_text, answer_text;
         """
     else:
         query = "SELECT * FROM responses_1 WHERE 1=0"
