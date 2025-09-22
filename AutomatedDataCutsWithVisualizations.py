@@ -76,6 +76,16 @@ def connect_to_db():
     return connection
 connection = connect_to_db()
 
+with st.expander("📊 View Full Study (All Questions & Answers)"):
+    query = """
+    SELECT q_question_code, s_question_text, answer_text, question_category
+    FROM question_mapping
+    ORDER BY q_question_code, answer_text
+    """
+    study_df = pd.read_sql(query, connection)
+    
+    st.dataframe(study_df, use_container_width=True)
+
 # Clear Streamlit cache
 st.cache_data.clear()
 
