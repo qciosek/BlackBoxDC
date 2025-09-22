@@ -77,7 +77,7 @@ def connect_to_db():
 connection = connect_to_db()
 
 with st.expander("📊 View Full Study (All Questions & Answers)"):
-    query = """
+    query = f"""
     SELECT q_question_code, s_question_text, answer_text, question_category
     FROM {question_mapping_table}
     ORDER BY q_question_code, answer_text
