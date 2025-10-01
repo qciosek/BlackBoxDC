@@ -481,8 +481,8 @@ def main():
                 )]
                 if not brands_df.empty:
                     st.markdown("### 🏷️ Brands (All in One List, Top 5)")
-                    brands_top5 = brands_df.nlargest(5, 'cutpercentage_numeric')
-                    st.dataframe(brands_top5[['q_question_code', 'answer_text', 'cutpercentage', 'index']])
+                    brands_top20 = brands_df.nlargest(20, 'index')
+                    st.dataframe(brands_top20[['q_question_code', 'answer_text', 'cutpercentage', 'index']])
 
 
             st.subheader("Bar Chart Visualization")
