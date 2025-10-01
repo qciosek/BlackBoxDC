@@ -9,7 +9,7 @@ import textwrap
 st.set_page_config(
     page_title="Olympics Fandom Study",
     page_icon=":chart_with_upwards_trend:",
-    layout="centered",
+    layout="wide",
     initial_sidebar_state="expanded",
 )
 
@@ -142,7 +142,9 @@ def fetch_data_and_sample_size(connection, selected_questions):
         )
 
         SELECT 
-            qm.question_code, 
+            qm.question_code,
+            qm.q_question_code AS q_question_code,
+            qm.s_question_text AS s_question_text, 
             CASE 
                 WHEN LENGTH(qm.question_text) > 60 THEN CONCAT(LEFT(qm.question_text, 60), '...')
                 ELSE qm.question_text
@@ -429,7 +431,60 @@ def main():
                 question_df_all['dropdown_label'].tolist(),
                 default=auto_selected_answers  # Auto-select answers if applicable
             )
- 
+            # ---- Generate Dashboard Button ----
+            
+            if st.button("Generate Dashboard"):
+
+    # ---- CONTENT SECTION ----
+                content_df = df[df['question_code'].isin(
+                    question_df_all[question_df_all['category'] == 'Content']['question_code']
+                )]
+                if not content_df.empty:
+                    st.markdown("### 📌 Content (Top 5 per Question)")
+                    unique_q_codes = content_df['q_question_code'].unique()
+
+                    for i in range(0, len(unique_q_codes), 3):
+                        row_q_codes = unique_q_codes[i:i + 3]
+                        cols = st.columns(3)
+
+                        for col, q_code in zip(cols, row_q_codes):
+                            subset = content_df[content_df['q_question_code'] == q_code].nlargest(5, 'cutpercentage_numeric')
+                            if not subset.empty:
+                                s_question_text = subset['s_question_text'].iloc[0] if 's_question_text' in subset.columns else ""
+                                with col:
+                                    st.write(f"**{q_code}: {s_question_text}**")
+                                    st.dataframe(subset[['answer_text', 'cutpercentage', 'index']])
+
+    # ---- DEMOGRAPHICS SECTION ----
+                demo_df = df[df['question_code'].isin(
+                    question_df_all[question_df_all['category'] == 'Demographics']['question_code']
+                )]
+                if not demo_df.empty:
+                    st.markdown("### 👥 Demographics (Top 5 per Question)")
+                    unique_q_codes = demo_df['q_question_code'].unique()
+
+                    for i in range(0, len(unique_q_codes), 3):
+                        row_q_codes = unique_q_codes[i:i + 3]
+                        cols = st.columns(3)
+
+                        for col, q_code in zip(cols, row_q_codes):
+                            subset = demo_df[demo_df['q_question_code'] == q_code].nlargest(5, 'cutpercentage_numeric')
+                            if not subset.empty:
+                                s_question_text = subset['s_question_text'].iloc[0] if 's_question_text' in subset.columns else ""
+                                with col:
+                                    st.write(f"**{q_code}: {s_question_text}**")
+                                    st.dataframe(subset[['answer_text', 'cutpercentage', 'index']])
+
+    # ---- BRANDS SECTION ----
+                brands_df = df[df['question_code'].isin(
+                    question_df_all[question_df_all['category'] == 'Brand']['question_code']
+                )]
+                if not brands_df.empty:
+                    st.markdown("### 🏷️ Brands (All in One List, Top 5)")
+                    brands_top5 = brands_df.nlargest(5, 'cutpercentage_numeric')
+                    st.dataframe(brands_top5[['q_question_code', 'answer_text', 'cutpercentage', 'index']])
+
+
             st.subheader("Bar Chart Visualization")
 
 
