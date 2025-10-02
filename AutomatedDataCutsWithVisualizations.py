@@ -395,7 +395,6 @@ def main():
                 mime="text/csv"
             )
              
-            
             # ---- Generate Dashboard Button ----
             
             if st.button("Generate Dashboard"):
@@ -404,7 +403,7 @@ def main():
                     question_df_all[question_df_all['category'] == 'Demographics']['question_code']
                 )]
                 if not demo_df.empty:
-                    st.markdown("### 👥 Demographics (Top 5 per Question)")
+                    st.markdown("### 👥 Demographics")
                     unique_q_codes = demo_df['q_question_code'].unique()
 
                     for i in range(0, len(unique_q_codes), 3):
@@ -424,7 +423,7 @@ def main():
                 )]
 
                 if not content_df.empty:
-                    st.markdown("### 📌 Content (Top 5 per Question)")
+                    st.markdown("### 📌 Content (Top 5 listed)")
 
     # ✅ 1. Define the question order you want
                     desired_order = ["Q15", "Q17", "Q16", "Q20", "Q5", "Q4"]
