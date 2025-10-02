@@ -441,7 +441,7 @@ def main():
                                         ax.set_title(f"{q_code} - {s_question_text}")
                                         ax.set_xlabel(metric.replace("_numeric", "").title())  # X-axis: values
                                         ax.set_ylabel("Answers")                               # Y-axis: labels
-                                            st.pyplot(fig)
+                                        st.pyplot(fig)
 
 # ✅ Pie Chart Checkbox
                                     if st.checkbox("Pie Chart", key=f"pie_{q_code}"):
