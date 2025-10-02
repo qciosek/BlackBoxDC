@@ -434,28 +434,7 @@ def main():
             # ---- Generate Dashboard Button ----
             
             if st.button("Generate Dashboard"):
-
-    # ---- CONTENT SECTION ----
-                content_df = df[df['question_code'].isin(
-                    question_df_all[question_df_all['category'] == 'Content']['question_code']
-                )]
-                if not content_df.empty:
-                    st.markdown("### 📌 Content (Top 5 per Question)")
-                    unique_q_codes = content_df['q_question_code'].unique()
-
-                    for i in range(0, len(unique_q_codes), 3):
-                        row_q_codes = unique_q_codes[i:i + 3]
-                        cols = st.columns(3)
-
-                        for col, q_code in zip(cols, row_q_codes):
-                            subset = content_df[content_df['q_question_code'] == q_code].nlargest(5, 'cutpercentage_numeric')
-                            if not subset.empty:
-                                s_question_text = subset['s_question_text'].iloc[0] if 's_question_text' in subset.columns else ""
-                                with col:
-                                    st.write(f"**{q_code}: {s_question_text}**")
-                                    st.dataframe(subset[['answer_text', 'cutpercentage', 'index']])
-
-    # ---- DEMOGRAPHICS SECTION ----
+              # ---- DEMOGRAPHICS SECTION ----  
                 demo_df = df[df['question_code'].isin(
                     question_df_all[question_df_all['category'] == 'Demographics']['question_code']
                 )]
@@ -474,6 +453,40 @@ def main():
                                 with col:
                                     st.write(f"**{q_code}: {s_question_text}**")
                                     st.dataframe(subset[['answer_text', 'cutpercentage', 'index']])
+    # ---- CONTENT SECTION ----
+                content_df = df[df['question_code'].isin(
+                    question_df_all[question_df_all['category'] == 'Content']['question_code']
+                )]
+
+                if not content_df.empty:
+                    st.markdown("### 📌 Content (Top 5 per Question)")
+
+    # ✅ 1. Define the question order you want
+                    desired_order = ["Q15", "Q17", "Q16", "Q20", "Q5", "Q4"]
+
+    # ✅ 2. Add a sorting key based on desired order
+                    content_df['sort_order'] = content_df['q_question_code'].apply(
+                        lambda x: desired_order.index(x) if x in desired_order else len(desired_order)
+                    )
+
+    # ✅ 3. Sort the dataframe by the custom order
+                    content_df = content_df.sort_values(by='sort_order')
+
+    # ✅ 4. Get q_question_code in sorted order
+                    unique_q_codes = content_df['q_question_code'].unique()
+
+                    for i in range(0, len(unique_q_codes), 3):
+                        row_q_codes = unique_q_codes[i:i + 3]
+                        cols = st.columns(3)
+
+                        for col, q_code in zip(cols, row_q_codes):
+                            subset = content_df[content_df['q_question_code'] == q_code].nlargest(5, 'cutpercentage_numeric')
+                            if not subset.empty:
+                                s_question_text = subset['s_question_text'].iloc[0] if 's_question_text' in subset.columns else ""
+                                with col:
+                                    st.write(f"**{q_code}: {s_question_text}**")
+                                    st.dataframe(subset[['answer_text', 'cutpercentage', 'index']])
+
 
     # ---- BRANDS SECTION ----
                 brands_df = df[df['question_code'].isin(
