@@ -413,9 +413,9 @@ def main():
                     st.markdown("### 👥 Demographics")
                     unique_q_codes = demo_df['q_question_code'].unique()
 
-                    for i in range(0, len(unique_q_codes), 3):
-                        row_q_codes = unique_q_codes[i:i + 3]
-                        cols = st.columns(3)
+                    for i in range(0, len(unique_q_codes), 2):
+                        row_q_codes = unique_q_codes[i:i + 2]
+                        cols = st.columns(2)
 
                         for col, q_code in zip(cols, row_q_codes):
                             subset = demo_df[demo_df['q_question_code'] == q_code].nlargest(5, 'cutpercentage_numeric')
