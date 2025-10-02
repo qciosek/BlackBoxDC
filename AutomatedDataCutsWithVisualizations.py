@@ -397,7 +397,14 @@ def main():
              
             # ---- Generate Dashboard Button ----
             
+            # Button that sets session state
             if st.button("Generate Dashboard"):
+                st.session_state['show_dashboard'] = True
+
+# Persist dashboard on interactions
+            if st.session_state.get('show_dashboard', False):
+    
+
               # ---- DEMOGRAPHICS SECTION ----  
                 demo_df = df[df['question_code'].isin(
                     question_df_all[question_df_all['category'] == 'Demographics']['question_code']
