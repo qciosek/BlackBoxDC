@@ -434,16 +434,16 @@ def main():
                     # ✅ Bar Chart Checkbox
                                     if st.checkbox("Bar Chart", key=f"bar_{q_code}"):
                                         fig, ax = plt.subplots()
-                                        ax.bar(
-                                            subset['answer_text'],
-                                            subset[metric]
+                                        ax.barh(
+                                            subset['answer_text'],      # Y-axis: answer labels
+                                            subset[metric]              # X-axis: values
                                         )
                                         ax.set_title(f"{q_code} - {s_question_text}")
-                                        ax.set_ylabel(metric.replace("_numeric", "").title())
-                                        plt.xticks(rotation=45, ha="right")
-                                        st.pyplot(fig)
+                                        ax.set_xlabel(metric.replace("_numeric", "").title())  # X-axis: values
+                                        ax.set_ylabel("Answers")                               # Y-axis: labels
+                                            st.pyplot(fig)
 
-                    # ✅ Pie Chart Checkbox
+# ✅ Pie Chart Checkbox
                                     if st.checkbox("Pie Chart", key=f"pie_{q_code}"):
                                         fig, ax = plt.subplots()
                                         ax.pie(
@@ -453,6 +453,7 @@ def main():
                                         )
                                         ax.set_title(f"{q_code} - {s_question_text}")
                                         st.pyplot(fig)
+
 
                 # ---- CONTENT SECTION ----
                 content_df = df[df['question_code'].isin(
