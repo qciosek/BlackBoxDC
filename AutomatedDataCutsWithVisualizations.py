@@ -403,7 +403,7 @@ def main():
                     question_df_all[question_df_all['category'] == 'Demographics']['question_code']
                 )]
                 if not demo_df.empty:
-                    st.markdown("### 👥 Demographics (Top 5 per Question)")
+                    st.markdown("### 👥 Demographics")
                     unique_q_codes = demo_df['q_question_code'].unique()
 
                     for i in range(0, len(unique_q_codes), 3):
@@ -417,8 +417,37 @@ def main():
                                 with col:
                                     st.write(f"**{q_code}: {s_question_text}**")
                                     st.dataframe(subset[['answer_text', 'cutpercentage', 'index']])
+                                    # ✅ Metric Selector
+                                    metric = st.selectbox(
+                                        f"Select metric for {q_code}",
+                                        ["cutpercentage_numeric", "avg_yes_percentage_numeric", "index"],
+                                        key=f"metric_{q_code}"
+                                    )
 
-    # ---- CONTENT SECTION ----
+                    # ✅ Bar Chart Checkbox
+                                    if st.checkbox("Bar Chart", key=f"bar_{q_code}"):
+                                        fig, ax = plt.subplots()
+                                        ax.bar(
+                                            subset['answer_text'],
+                                            subset[metric]
+                                        )
+                                        ax.set_title(f"{q_code} - {s_question_text}")
+                                        ax.set_ylabel(metric.replace("_numeric", "").title())
+                                        plt.xticks(rotation=45, ha="right")
+                                        st.pyplot(fig)
+
+                    # ✅ Pie Chart Checkbox
+                                    if st.checkbox("Pie Chart", key=f"pie_{q_code}"):
+                                        fig, ax = plt.subplots()
+                                        ax.pie(
+                                            subset[metric],
+                                            labels=subset['answer_text'],
+                                            autopct="%1.1f%%"
+                                        )
+                                        ax.set_title(f"{q_code} - {s_question_text}")
+                                        st.pyplot(fig)
+
+                # ---- CONTENT SECTION ----
                 content_df = df[df['question_code'].isin(
                     question_df_all[question_df_all['category'] == 'Content']['question_code']
                 )]
