@@ -493,7 +493,7 @@ def main():
                     question_df_all[question_df_all['category'] == 'Brand']['question_code']
                 )]
                 if not brands_df.empty:
-                    st.markdown("### 🏷️ Brands (All in One List, Top 5)")
+                    st.markdown("### 🏷️ Brands (Top 20)")
                     brands_top20 = brands_df.nlargest(20, 'index')
                     st.dataframe(brands_top20[['q_question_code', 'answer_text', 'cutpercentage', 'index']])
 
