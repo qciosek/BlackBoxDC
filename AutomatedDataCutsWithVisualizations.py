@@ -409,11 +409,12 @@ def main():
                 demo_df = df[df['question_code'].isin(
                     question_df_all[question_df_all['category'] == 'Demographics']['question_code']
                 )]
+
                 if not demo_df.empty:
                     st.markdown("### 👥 Demographics")
                     unique_q_codes = demo_df['q_question_code'].unique()
 
-                    for i in range(0, len(unique_q_codes), 2):
+                    for i in range(0, len(unique_q_codes), 2):  # 2 columns per row
                         row_q_codes = unique_q_codes[i:i + 2]
                         cols = st.columns(2)
 
@@ -423,36 +424,43 @@ def main():
                                 s_question_text = subset['s_question_text'].iloc[0] if 's_question_text' in subset.columns else ""
                                 with col:
                                     st.write(f"**{q_code}: {s_question_text}**")
-                                    st.dataframe(subset[['answer_text', 'cutpercentage', 'index']])
-                                    # ✅ Metric Selector
-                                    metric = st.selectbox(
-                                        f"Select metric for {q_code}",
-                                        ["cutpercentage_numeric", "avg_yes_percentage_numeric", "index"],
-                                        key=f"metric_{q_code}"
-                                    )
 
-                    # ✅ Bar Chart Checkbox
-                                    if st.checkbox("Bar Chart", key=f"bar_{q_code}"):
+                    # --- Select Metric ---
+                                    st.markdown("**Select Metric**")
+                                    metric_cut = st.checkbox("Data Cut", value=True, key=f"metric_cut_{q_code}")
+                                    metric_avg = st.checkbox("Total Sample", value=False, key=f"metric_avg_{q_code}")
+                                    metric_index = st.checkbox("Index", value=False, key=f"metric_index_{q_code}")
+
+                    # Determine selected metric (prioritize cut > avg > index)
+                                    if metric_cut:
+                                        metric = 'cutpercentage_numeric'
+                                    elif metric_avg:
+                                        metric = 'avg_yes_percentage_numeric'
+                                    elif metric_index:
+                                        metric = 'index'
+                                    else:
+                                        metric = 'cutpercentage_numeric'  # fallback
+
+                    # --- Select Chart ---
+                                    st.markdown("**Select Chart**")
+                                    show_bar = st.checkbox("Bar Chart", key=f"bar_{q_code}")
+                                    show_pie = st.checkbox("Pie Chart", key=f"pie_{q_code}")
+
+                    # Render charts
+                                    if show_bar:
                                         fig, ax = plt.subplots()
-                                        ax.barh(
-                                            subset['answer_text'],      # Y-axis: answer labels
-                                            subset[metric]              # X-axis: values
-                                        )
+                                        ax.barh(subset['answer_text'], subset[metric])
                                         ax.set_title(f"{q_code} - {s_question_text}")
-                                        ax.set_xlabel(metric.replace("_numeric", "").title())  # X-axis: values
-                                        ax.set_ylabel("Answers")                               # Y-axis: labels
+                                        ax.set_xlabel(metric.replace("_numeric", "").title())
+                                        ax.set_ylabel("Answers")
                                         st.pyplot(fig)
 
-# ✅ Pie Chart Checkbox
-                                    if st.checkbox("Pie Chart", key=f"pie_{q_code}"):
+                                    if show_pie:
                                         fig, ax = plt.subplots()
-                                        ax.pie(
-                                            subset[metric],
-                                            labels=subset['answer_text'],
-                                            autopct="%1.1f%%"
-                                        )
+                                        ax.pie(subset[metric], labels=subset['answer_text'], autopct="%1.1f%%")
                                         ax.set_title(f"{q_code} - {s_question_text}")
                                         st.pyplot(fig)
+
 
 
                 # ---- CONTENT SECTION ----
