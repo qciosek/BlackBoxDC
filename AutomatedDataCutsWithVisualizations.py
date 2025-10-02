@@ -424,7 +424,7 @@ def main():
                                 s_question_text = subset['s_question_text'].iloc[0] if 's_question_text' in subset.columns else ""
                                 with col:
                                     st.write(f"**{q_code}: {s_question_text}**")
-
+                                    st.dataframe(subset[['answer_text', 'cutpercentage', 'index']])
                     # --- Select Metric ---
                                     st.markdown("**Select Metric**")
                                     metric_cut = st.checkbox("Data Cut", value=True, key=f"metric_cut_{q_code}")
