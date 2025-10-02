@@ -403,7 +403,7 @@ def main():
                     question_df_all[question_df_all['category'] == 'Demographics']['question_code']
                 )]
                 if not demo_df.empty:
-                    st.markdown("### 👥 Demographics")
+                    st.markdown("### 👥 Demographics (Top 5 per Question)")
                     unique_q_codes = demo_df['q_question_code'].unique()
 
                     for i in range(0, len(unique_q_codes), 3):
@@ -417,6 +417,7 @@ def main():
                                 with col:
                                     st.write(f"**{q_code}: {s_question_text}**")
                                     st.dataframe(subset[['answer_text', 'cutpercentage', 'index']])
+
     # ---- CONTENT SECTION ----
                 content_df = df[df['question_code'].isin(
                     question_df_all[question_df_all['category'] == 'Content']['question_code']
