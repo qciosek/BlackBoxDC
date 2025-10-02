@@ -427,10 +427,18 @@ def main():
                                     st.dataframe(subset[['answer_text', 'cutpercentage', 'index']])
                     # --- Select Metric ---
                                     st.markdown("**Select Metric**")
-                                    metric_cut = st.checkbox("Data Cut", value=True, key=f"metric_cut_{q_code}")
-                                    metric_avg = st.checkbox("Total Sample", value=False, key=f"metric_avg_{q_code}")
-                                    metric_index = st.checkbox("Index", value=False, key=f"metric_index_{q_code}")
+                                    metric_col, chart_col = st.columns(2)
 
+                                    with metric_col:
+                                        st.markdown("**Select Metric**")
+                                        metric_cut = st.checkbox("Data Cut", value=True, key=f"metric_cut_{q_code}")
+                                        metric_avg = st.checkbox("Total Sample", value=False, key=f"metric_avg_{q_code}")
+                                        metric_index = st.checkbox("Index", value=False, key=f"metric_index_{q_code}")
+
+                                    with chart_col:
+                                        st.markdown("**Select Chart**")
+                                        show_bar = st.checkbox("Bar Chart", key=f"bar_{q_code}")
+                                        show_pie = st.checkbox("Pie Chart", key=f"pie_{q_code}")
                     # Determine selected metric (prioritize cut > avg > index)
                                     if metric_cut:
                                         metric = 'cutpercentage_numeric'
@@ -440,11 +448,6 @@ def main():
                                         metric = 'index'
                                     else:
                                         metric = 'cutpercentage_numeric'  # fallback
-
-                    # --- Select Chart ---
-                                    st.markdown("**Select Chart**")
-                                    show_bar = st.checkbox("Bar Chart", key=f"bar_{q_code}")
-                                    show_pie = st.checkbox("Pie Chart", key=f"pie_{q_code}")
 
                     # Render charts
                                     if show_bar:
