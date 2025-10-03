@@ -425,7 +425,7 @@ def main():
                                 with col:
                                     st.write(f"**{q_code}: {s_question_text}**")
                                     st.dataframe(subset[['answer_text', 'cutpercentage', 'index']],
-                                                height = 200
+                                                height = 210
                                                 )
                     # --- Select Metric ---
                                     metric_col, chart_col = st.columns(2)
