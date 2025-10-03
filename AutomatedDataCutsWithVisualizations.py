@@ -450,7 +450,7 @@ def main():
 
                     # Render charts
                                     if show_bar:
-                                        fig, ax = plt.subplots(figsize=(4, 3))  # smaller figure
+                                        fig, ax = plt.subplots(figsize=(3, 2))  # smaller figure
                                         ax.barh(subset['answer_text'], subset[metric])
                                         ax.set_title(f"{q_code} - {s_question_text}")
                                         ax.set_xlabel(metric.replace("_numeric", "").title())
@@ -458,7 +458,7 @@ def main():
                                         st.pyplot(fig)
 
                                     if show_pie:
-                                        fig, ax = plt.subplots(figsize=(4, 3))  # smaller figure
+                                        fig, ax = plt.subplots(figsize=(3, 2))  # smaller figure
                                         ax.pie(subset[metric], labels=subset['answer_text'], autopct="%1.1f%%")
                                         ax.set_title(f"{q_code} - {s_question_text}")
                                         st.pyplot(fig)
