@@ -424,7 +424,9 @@ def main():
                                 s_question_text = subset['s_question_text'].iloc[0] if 's_question_text' in subset.columns else ""
                                 with col:
                                     st.write(f"**{q_code}: {s_question_text}**")
-                                    st.dataframe(subset[['answer_text', 'cutpercentage', 'index']])
+                                    st.dataframe(subset[['answer_text', 'cutpercentage', 'index']]
+                                                height = 200
+                                                )
                     # --- Select Metric ---
                                     metric_col, chart_col = st.columns(2)
 
@@ -450,7 +452,7 @@ def main():
                                         fig, ax = plt.subplots(figsize=(4, 3))  # smaller figure
                                         ax.barh(subset['answer_text'], subset[metric])
                                         ax.set_title(f"{q_code} - {s_question_text}")
-                                        ax.set_xlabel(metric.replace("_numeric", "").title())
+                                        ax.set_xlabel(metric.replace("cutpercentage_numeric", "Cut Percentage").title())
                                         ax.set_ylabel("Answers")
                                         st.pyplot(fig)
 
