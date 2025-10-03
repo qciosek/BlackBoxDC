@@ -424,9 +424,9 @@ def main():
                                 s_question_text = subset['s_question_text'].iloc[0] if 's_question_text' in subset.columns else ""
                                 with col:
                                     st.write(f"**{q_code}: {s_question_text}**")
-                                    st.dataframe(subset[['answer_text', 'cutpercentage', 'index']],
+                                    st.dataframe(subset[['answer_text', 'cutpercentage', 'index']].reset_index(drop=True),
                                                 height = 210
-                                                ).reset_index(drop=True)
+                                                )
                     # --- Select Metric ---
                                     metric_col, chart_col = st.columns(2)
 
@@ -496,7 +496,7 @@ def main():
                                 s_question_text = subset['s_question_text'].iloc[0] if 's_question_text' in subset.columns else ""
                                 with col:
                                     st.write(f"**{q_code}: {s_question_text}**")
-                                    st.dataframe(subset[['answer_text', 'cutpercentage', 'index']]).reset_index(drop=True)
+                                    st.dataframe(subset[['answer_text', 'cutpercentage', 'index']].reset_index(drop=True))
 
 
     # ---- BRANDS SECTION ----
@@ -506,7 +506,7 @@ def main():
                 if not brands_df.empty:
                     st.markdown("### 🏷️ Brands (Top 20)")
                     brands_top20 = brands_df.nlargest(20, 'index')
-                    st.dataframe(brands_top20[['q_question_code', 'answer_text', 'cutpercentage', 'index']]).reset_index(drop=True)
+                    st.dataframe(brands_top20[['q_question_code', 'answer_text', 'cutpercentage', 'index']].reset_index(drop=True))
                     
             unique_q_question_codes = question_df_all[['q_question_code', 's_question_text']].drop_duplicates()
  
