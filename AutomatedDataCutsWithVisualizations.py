@@ -430,8 +430,7 @@ def main():
 
                                     with metric_col:
                                         st.markdown("**Select Metric**")
-                                        metric_cut = st.checkbox("Data Cut", value=True, key=f"metric_cut_{q_code}")
-                                        metric_avg = st.checkbox("Total Sample", value=False, key=f"metric_avg_{q_code}")
+                                        metric_cut = st.checkbox("Cut Percentage", value=True, key=f"metric_cut_{q_code}")
                                         metric_index = st.checkbox("Index", value=False, key=f"metric_index_{q_code}")
 
                                     with chart_col:
@@ -441,8 +440,6 @@ def main():
                     # Determine selected metric (prioritize cut > avg > index)
                                     if metric_cut:
                                         metric = 'cutpercentage_numeric'
-                                    elif metric_avg:
-                                        metric = 'avg_yes_percentage_numeric'
                                     elif metric_index:
                                         metric = 'index'
                                     else:
@@ -458,7 +455,7 @@ def main():
                                         st.pyplot(fig)
 
                                     if show_pie:
-                                        fig, ax = plt.subplots(figsize=(3, 2))  # smaller figure
+                                        fig, ax = plt.subplots(figsize=(3, 4))  # smaller figure
                                         ax.pie(subset[metric], labels=subset['answer_text'], autopct="%1.1f%%")
                                         ax.set_title(f"{q_code} - {s_question_text}")
                                         st.pyplot(fig)
