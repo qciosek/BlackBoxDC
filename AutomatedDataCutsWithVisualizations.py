@@ -496,8 +496,8 @@ def main():
                                 s_question_text = subset['s_question_text'].iloc[0] if 's_question_text' in subset.columns else ""
                                 with col:
                                     st.write(f"**{q_code}: {s_question_text}**")
-                                    st.dataframe(subset[['answer_text', 'cutpercentage', 'index']].reset_index(drop=True))
-
+                                    df_to_display = subset[['answer_text', 'cutpercentage', 'index']].reset_index(drop=True)
+                                    st.dataframe(df_to_display)
 
     # ---- BRANDS SECTION ----
                 brands_df = df[df['question_code'].isin(
