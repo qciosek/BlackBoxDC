@@ -291,9 +291,9 @@ def main():
     st.markdown(
     """
     <div style="text-align: center;">
-        <h1 style="font-size: 38px; margin: 0; padding: 0;">Green Light IQ</h1>
+        <h1 style="font-size: 38px; margin: 0; padding: 0;">GreenlightIQ</h1>
         <h2 style="font-size: 28px; margin: 0; padding: 0;">
-            <em>"The Smartest Way to Power Your Content Engine"</em> 
+            <em>"Fueling Creative Brilliance"</em> 
         </h2>
     </div>
     """,
