@@ -30,7 +30,7 @@ elif dataset_option == "Linear TV Study":
 elif dataset_option == "Drivers of Sports Fandom (new)":
     responses_table = "responses_5"
     question_mapping_table = "question_mapping_5"
-elif dataset_option == "Shark Tank Study"
+elif dataset_option == "Shark Tank Study":
     responses_table = "responses_6"
     question_mapping_table = "question_mapping_6"
 else:  # Test Dataset
