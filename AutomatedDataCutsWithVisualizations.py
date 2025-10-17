@@ -7,7 +7,7 @@ import textwrap
 
 # Set Streamlit page configuration
 st.set_page_config(
-    page_title="Olympics Fandom Study",
+    page_title="GreenlightIQ",
     page_icon=":chart_with_upwards_trend:",
     layout="wide",
     initial_sidebar_state="expanded",
