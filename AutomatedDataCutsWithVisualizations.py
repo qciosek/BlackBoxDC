@@ -15,7 +15,7 @@ st.set_page_config(
 
 dataset_option = st.sidebar.selectbox(
     "Pick a dataset",
-    ["Sports Fandom Study", "Content Fandom Study", "Linear TV Study", "Young People Study", "Drivers of Sports Fandom (new)", "Shark Tank Study", "Cut Study"]
+    ["Sports Fandom Study", "Content Fandom Study", "Linear TV Study", "Young People Study", "Drivers of Sports Fandom (new)", "Shark Tank Study", "Female Focused Media Study"]
 )
 
 if dataset_option == "Sports Fandom Study":
@@ -33,7 +33,7 @@ elif dataset_option == "Drivers of Sports Fandom (new)":
 elif dataset_option == "Shark Tank Study":
     responses_table = "responses_6"
     question_mapping_table = "question_mapping_6"
-elif dataset_option == "Cut Study":
+elif dataset_option == "Female Focused Media Study":
     responses_table = "responses_7"
     question_mapping_table = "question_mapping_7"
 else:  # Test Dataset
