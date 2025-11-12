@@ -37,7 +37,7 @@ elif dataset_option == "Female Focused Media Study":
     responses_table = "responses_7"
     question_mapping_table = "question_mapping_7"
 elif dataset_option == "Morning Drive Study":
-    responses_table = "responses_8"
+    responses_table = "responses_8_test"
     question_mapping_table = "question_mapping_8"
 else:  # Test Dataset
     responses_table = "responses_3"
