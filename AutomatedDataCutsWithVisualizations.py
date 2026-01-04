@@ -297,6 +297,10 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
 # Main function
 def main():
     connection = connect_to_db()
+    # ---- EL RESPONSES SECTION ----
+
+# Connect to DB
+    connection = connect_to_db()
     st.markdown(
     """
     <div style="text-align: center;">
@@ -306,9 +310,55 @@ def main():
         </h2>
     </div>
     """,
-    unsafe_allow_html=True
-)
+        unsafe_allow_html=True
+    )
 
+# Fetch all question_codes for dropdown
+    el_question_codes_query = "SELECT DISTINCT question_code FROM FE_responses_6 ORDER BY question_code"
+    el_question_codes_df = pd.read_sql(el_question_codes_query, connection)
+    el_question_codes_list = ["Select a Question Code"] + el_question_codes_df['question_code'].tolist()
+
+    selected_el_question_code = st.selectbox("Select a Question Code to view EL1-EL24:", el_question_codes_list)
+
+    if selected_el_question_code != "Select a Question Code":
+    # Fetch EL1-EL24 values for the selected question_code
+        el_values_query = f"""
+            SELECT * FROM FE_responses_6
+            WHERE question_code = '{selected_el_question_code}'
+            LIMIT 1
+        """
+        el_values_df = pd.read_sql(el_values_query, connection)
+
+        if not el_values_df.empty:
+        # Fetch EL mapping
+            el_mapping_query = "SELECT el_code, el_text FROM FE_EL_mapping_6 ORDER BY el_order"
+            el_mapping_df = pd.read_sql(el_mapping_query, connection)
+
+        # Prepare combined display
+            display_df = pd.DataFrame()
+            for i in range(1, 25):  # EL_1 to EL_24
+                el_column = f"EL_{i}"
+                if el_column in el_values_df.columns:
+                    el_value = el_values_df.iloc[0][el_column]
+        # Match using full EL_# string
+                    el_text_arr = el_mapping_df[el_mapping_df['el_code'] == el_column]['el_text'].values
+                    el_text = el_text_arr[0] if len(el_text_arr) > 0 else "(No Text)"
+                    display_df = pd.concat([
+                        display_df,
+                        pd.DataFrame({
+                            'EL': [el_column],
+                            'EL Text': [el_text],
+                            'Value': [el_value]
+                        })
+                    ], ignore_index=True)
+
+
+        # Display in table
+            st.dataframe(display_df, use_container_width=True)
+        else:
+            st.write("No EL data found for this question code.")
+
+        
 
 
     # Apply custom theme
