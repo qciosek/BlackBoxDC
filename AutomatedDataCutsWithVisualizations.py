@@ -332,7 +332,7 @@ def main():
     el_dropdown_options = ["Select a Question Code"] + list(el_label_to_code.keys())
 
     selected_label = st.selectbox(
-        "Select a Question Code to view EL1–EL24:",
+        "Select a question code for front end data:",
         el_dropdown_options
     )
 
