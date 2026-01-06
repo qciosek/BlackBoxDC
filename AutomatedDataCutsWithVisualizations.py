@@ -314,22 +314,48 @@ def main():
     )
 
 # Fetch all question_codes for dropdown
-    el_question_codes_query = "SELECT DISTINCT question_code FROM FE_responses_6 ORDER BY question_code"
+# --- Pull question_code + answer_text for dropdown ---
+    el_question_codes_query = """
+        SELECT DISTINCT question_code, answer_text
+        FROM FE_responses_6
+        ORDER BY question_code
+    """
     el_question_codes_df = pd.read_sql(el_question_codes_query, connection)
-    el_question_codes_list = ["Select a Question Code"] + el_question_codes_df['question_code'].tolist()
 
-    selected_el_question_code = st.selectbox("Select a Question Code to view EL1-EL24:", el_question_codes_list)
+# Build label → value mapping
+    el_label_to_code = {
+        f"{row['question_code']} — {row['answer_text']}": row['question_code']
+        for _, row in el_question_codes_df.iterrows()
+    }
 
-    if selected_el_question_code != "Select a Question Code":
-    # Fetch EL1-EL24 values for the selected question_code
+# Dropdown labels
+    el_dropdown_options = ["Select a Question Code"] + list(el_label_to_code.keys())
+
+    selected_label = st.selectbox(
+        "Select a Question Code to view EL1–EL24:",
+        el_dropdown_options
+    )
+
+# Resolve actual question_code
+    selected_el_question_code = (
+        el_label_to_code[selected_label]
+        if selected_label != "Select a Question Code"
+        else None
+    )
+
+# --- Fetch EL1–EL24 values ---
+    if selected_el_question_code:
         el_values_query = f"""
-            SELECT * FROM FE_responses_6
+            SELECT *
+            FROM FE_responses_6
             WHERE question_code = '{selected_el_question_code}'
             LIMIT 1
         """
         el_values_df = pd.read_sql(el_values_query, connection)
 
         if not el_values_df.empty:
+            pass  # your existing EL mapping / display logic continues here
+
         # Fetch EL mapping
             el_mapping_query = "SELECT el_code, el_text FROM FE_EL_mapping_6 ORDER BY el_order"
             el_mapping_df = pd.read_sql(el_mapping_query, connection)
