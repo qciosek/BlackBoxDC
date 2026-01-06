@@ -324,7 +324,7 @@ def main():
 
 # Build label → value mapping
     el_label_to_code = {
-        f"{row['question_code']} — {row['answer_text']}": row['question_code']
+        f"{row['question_code']} , {row['answer_text']}": row['question_code']
         for _, row in el_question_codes_df.iterrows()
     }
 
