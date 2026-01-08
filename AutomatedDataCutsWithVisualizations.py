@@ -178,7 +178,7 @@ def fetch_data_and_sample_size(connection, selected_questions):
     else:
         query = "SELECT * FROM responses_1 WHERE 1=0"
 
-    df = pd.read_sql(query, connection)
+    df = pd.read_sql(query, connection) 
     return df, sample_size
 
 
@@ -294,6 +294,66 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
     ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.015), ncol=3)
     st.pyplot(fig)
 
+import altair as alt
+
+def plot_el_bar_chart_with_editable_labels(el_display_df, orientation):
+    if el_display_df.empty:
+        return
+
+    # Add color based on value
+    def get_color(value):
+        if value < 0:
+            return "#DA261F"
+        elif 1 <= value <= 3:
+            return "#DAC41F"
+        elif value > 3:
+            return "#1FDA2C"
+        else:
+            return "#BDBDBD"  # default color for value = 0 or other cases
+    
+    el_display_df['Bar Color'] = el_display_df['Value'].apply(get_color)
+
+    base = alt.Chart(el_display_df)
+##Add option to sort the data by ascending or descending value with the deafult set to descending
+    if orientation == "Horizontal":
+# Horizontal chart
+    
+        bars = base.mark_bar().encode(
+            y=alt.Y("EL Text:N", sort=el_display_df["EL Text"].tolist(), title=None, axis=alt.Axis(labelLimit=400)),
+            x=alt.X("Value:Q", title="Value"),
+            color=alt.Color("Bar Color:N", scale=None, legend=None)
+        )
+
+        labels = base.mark_text(
+            align="left",
+            baseline="middle",
+            color="white",
+            dx=3
+        ).encode(
+            y=alt.Y("EL Text:N", sort=el_display_df["EL Text"].tolist()),
+            x="Value:Q",
+            text=alt.Text("Value:Q", format=".0f")
+        )
+
+    else:  # Vertical
+        bars = base.mark_bar().encode(
+            x=alt.X("EL Text:N", sort=el_display_df["EL Text"].tolist(), title=None, axis=alt.Axis(labelLimit=200)),
+            y=alt.Y("Value:Q", title="Value"),
+            color=alt.Color("Bar Color:N", scale=None, legend=None)
+        )
+
+        labels = base.mark_text(
+            align="center",
+            baseline="bottom",
+            dy=-3
+        ).encode(
+            x=alt.X("EL Text:N", sort=el_display_df["EL Text"].tolist()),
+            y="Value:Q",
+            text=alt.Text("Value:Q", format=".0f")
+        )
+
+    st.altair_chart((bars + labels).properties(height=600, width=800), use_container_width=True)
+
 # Main function
 def main():
     connection = connect_to_db()
@@ -314,15 +374,18 @@ def main():
     )
 
 # Fetch all question_codes for dropdown
-# --- Pull question_code + answer_text for dropdown ---
+   # =========================
+# EL SECTION
+# =========================
+
     el_question_codes_query = """
-        SELECT DISTINCT question_code, answer_text
-        FROM FE_responses_6
-        ORDER BY question_code
+    SELECT DISTINCT question_code, answer_text
+    FROM FE_responses_6
+    ORDER BY question_code
     """
     el_question_codes_df = pd.read_sql(el_question_codes_query, connection)
 
-# Build label → value mapping
+    ##Build label → value mapping
     el_label_to_code = {
         f"{row['question_code']} , {row['answer_text']}": row['question_code']
         for _, row in el_question_codes_df.iterrows()
@@ -343,46 +406,141 @@ def main():
         else None
     )
 
-# --- Fetch EL1–EL24 values ---
-    if selected_el_question_code:
-        el_values_query = f"""
-            SELECT *
-            FROM FE_responses_6
-            WHERE question_code = '{selected_el_question_code}'
-            LIMIT 1
-        """
-        el_values_df = pd.read_sql(el_values_query, connection)
+    if selected_el_question_code != "Select a Question Code":
+
+    # Fetch EL1–EL24 values for the selected question_code
+        el_values_query = """
+        SELECT *
+        FROM FE_responses_6
+        WHERE question_code = %s
+        LIMIT 1
+    """
+        el_values_df = pd.read_sql(
+            el_values_query,
+            connection,
+            params=[selected_el_question_code]
+        )
 
         if not el_values_df.empty:
-            pass  # your existing EL mapping / display logic continues here
 
         # Fetch EL mapping
-            el_mapping_query = "SELECT el_code, el_text FROM FE_EL_mapping_6 ORDER BY el_order"
+            el_mapping_query = """
+            SELECT el_code, el_text
+            FROM FE_EL_mapping_6
+            ORDER BY el_order
+        """
             el_mapping_df = pd.read_sql(el_mapping_query, connection)
 
-        # Prepare combined display
-            display_df = pd.DataFrame()
+        # -------------------------
+        # Build display dataframe
+        # -------------------------
+            rows = []
+
             for i in range(1, 25):  # EL_1 to EL_24
                 el_column = f"EL_{i}"
+
                 if el_column in el_values_df.columns:
                     el_value = el_values_df.iloc[0][el_column]
-        # Match using full EL_# string
-                    el_text_arr = el_mapping_df[el_mapping_df['el_code'] == el_column]['el_text'].values
-                    el_text = el_text_arr[0] if len(el_text_arr) > 0 else "(No Text)"
-                    display_df = pd.concat([
-                        display_df,
-                        pd.DataFrame({
-                            'EL': [el_column],
-                            'EL Text': [el_text],
-                            'Value': [el_value]
-                        })
-                    ], ignore_index=True)
 
+                    el_text_match = el_mapping_df.loc[
+                        el_mapping_df["el_code"] == el_column, "el_text"
+                    ]
 
-        # Display in table
-            st.dataframe(display_df, use_container_width=True)
+                    el_text = (
+                        el_text_match.iloc[0]
+                        if not el_text_match.empty
+                        else "(No Text)"
+                    )
+
+                    rows.append({
+                        "EL": el_column,
+                        "EL Text": el_text,
+                        "Value": el_value
+                    })
+
+            display_df = pd.DataFrame(rows)
+
+        # -------------------------
+        # Display table
+        # -------------------------
+            st.data_editor(
+                display_df,
+                use_container_width=True,
+                hide_index=True,
+                column_config={
+                    "EL": st.column_config.TextColumn("EL", width="small"),
+                    "EL Text": st.column_config.TextColumn("EL Text", width="large"),
+                    "Value": st.column_config.NumberColumn("Value", width="small")
+                }
+            )
+
+    ##Make EL column on bar chart wider
+    ##Make the bars in the chart green when above 0 and red when below 0, 1-3 yellow and above 3 green
+        # -------------------------
+        # EL BAR CHART CONTROLS
+        # -------------------------
+            st.markdown("### 📊 EL Bar Chart")
+
+            el_orientation = st.radio(
+                "EL Chart Orientation",
+                ["Vertical", "Horizontal"],
+                index=1,
+                horizontal=True,
+                key="el_orientation"
+            )
+            
+            # EL Sort Controls
+            el_sort_col1, el_sort_col2, el_sort_col3 = st.columns([1, 1, 2])
+            
+            with el_sort_col1:
+                el_sort_enabled = st.checkbox("Enable Sorting", key="el_sort_enabled")
+            
+            with el_sort_col2:
+                if el_sort_enabled:
+                    el_sort_order = st.radio(
+                        "Sort Order",
+                        ["Ascending", "Descending"],
+                        key="el_sort_order"
+                    )
+            
+            with el_sort_col3:
+                if el_sort_enabled:
+                    el_sort_by = st.selectbox(
+                        "Sort By",
+                        ["Value", "EL Text"],
+                        key="el_sort_by"
+                    )
+
+        # -------------------------
+        # EL BAR CHART
+        # -------------------------
+            # Apply sorting if enabled
+            el_display_df = display_df.copy()
+            if el_sort_enabled:
+                if el_sort_by == "Value":
+                    el_display_df = el_display_df.sort_values(
+                        by="Value", 
+                        ascending=(el_sort_order == "Ascending")
+                    ).reset_index(drop=True)
+                else:  # Sort by EL Text
+                    el_display_df = el_display_df.sort_values(
+                        by="EL Text", 
+                        ascending=(el_sort_order == "Ascending")
+                    ).reset_index(drop=True)
+            
+            el_display_df["EL Text Ordered"] = pd.Categorical(
+    el_display_df["EL Text"],
+    categories=el_display_df["EL Text"],  # preserves sorted order
+    ordered=True
+)
+            
+            plot_el_bar_chart_with_editable_labels(
+                el_display_df,
+                orientation=el_orientation
+            )
+
         else:
-            st.write("No EL data found for this question code.")
+            st.write("")
 
         
 
