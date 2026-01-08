@@ -319,7 +319,7 @@ def plot_el_bar_chart_with_editable_labels(el_display_df, orientation):
 # Horizontal chart
     
         bars = base.mark_bar().encode(
-            y=alt.Y("EL Text:N", sort=el_display_df["EL Text"].tolist(), title=None, axis=alt.Axis(labelLimit=400)),
+            y=alt.Y("EL Text:N", sort=el_display_df["EL Text"].tolist(), title=None, axis=alt.Axis(labelLimit=500)),
             x=alt.X("Value:Q", title="Value"),
             color=alt.Color("Bar Color:N", scale=None, legend=None)
         )
