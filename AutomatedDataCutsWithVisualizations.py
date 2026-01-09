@@ -586,7 +586,7 @@ def main():
                         else:
                             color_class = "cell-gray"
                         
-                        table_html += f'<td class="{color_class}">{value:.1f}</td>'
+                        table_html += f'<td class="{color_class}">{value:.0f}</td>'
                 
                 table_html += "</tr>"
             
