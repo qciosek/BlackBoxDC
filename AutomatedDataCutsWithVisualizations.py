@@ -395,9 +395,9 @@ def main():
     el_dropdown_options = ["Select a Question Code"] + list(el_label_to_code.keys())
 
     selected_labels = st.multiselect(
-        "Select up to 3 question codes for front end data:",
+        "Select up to 5 question codes for front end data:",
         el_dropdown_options,
-        max_selections=3
+        max_selections=5
     )
 
 # Resolve actual question_codes
@@ -417,7 +417,184 @@ def main():
         """
         el_mapping_df = pd.read_sql(el_mapping_query, connection)
 
-        # Process each selected question code
+        # -------------------------
+        # Build combined comparison table
+        # -------------------------
+        comparison_data = {}
+        
+        for selected_el_question_code in selected_el_question_codes:
+            # Fetch EL1–EL24 values for the selected question_code
+            el_values_query = """
+            SELECT *
+            FROM FE_responses_6
+            WHERE question_code = %s
+            LIMIT 1
+            """
+            el_values_df = pd.read_sql(
+                el_values_query,
+                connection,
+                params=[selected_el_question_code]
+            )
+
+            if not el_values_df.empty:
+                values_dict = {}
+                for i in range(1, 25):  # EL_1 to EL_24
+                    el_column = f"EL_{i}"
+                    if el_column in el_values_df.columns:
+                        values_dict[el_column] = el_values_df.iloc[0][el_column]
+                
+                comparison_data[selected_el_question_code] = values_dict
+
+        # Create combined comparison dataframe
+        if comparison_data:
+            combined_rows = []
+            for i in range(1, 25):  # EL_1 to EL_24
+                el_column = f"EL_{i}"
+                
+                # Get EL text
+                el_text_match = el_mapping_df.loc[
+                    el_mapping_df["el_code"] == el_column, "el_text"
+                ]
+                el_text = (
+                    el_text_match.iloc[0]
+                    if not el_text_match.empty
+                    else "(No Text)"
+                )
+                
+                # Create row with EL info and values from each question
+                row_data = {
+                    "EL": el_column,
+                    "EL Text": el_text
+                }
+                
+                # Add values for each selected question code
+                for j, question_code in enumerate(selected_el_question_codes):
+                    if question_code in comparison_data:
+                        row_data[f"Value - Q{j+1} ({question_code})"] = comparison_data[question_code].get(el_column, None)
+                
+                combined_rows.append(row_data)
+
+            combined_df = pd.DataFrame(combined_rows)
+            
+            # Display combined comparison table with server-side sorting
+            st.markdown("### 📊 EL Values Comparison Table")
+            
+            # Add sorting controls
+            col1, col2 = st.columns([2, 1])
+            with col1:
+                sort_column = st.selectbox(
+                    "Sort by:",
+                    ["EL", "EL Text"] + [f"Value - Q{j+1} ({qc})" for j, qc in enumerate(selected_el_question_codes)],
+                    key="sort_column"
+                )
+            with col2:
+                sort_direction = st.radio(
+                    "Direction:",
+                    ["Ascending", "Descending"],
+                    key="sort_direction",
+                    horizontal=True
+                )
+            
+            # Apply sorting
+            if sort_column in combined_df.columns:
+                if sort_column.startswith("Value -"):
+                    # Numeric sorting for value columns
+                    combined_df_sorted = combined_df.sort_values(
+                        by=sort_column, 
+                        ascending=(sort_direction == "Ascending"),
+                        na_position='last'
+                    )
+                else:
+                    # Text sorting for EL and EL Text columns
+                    combined_df_sorted = combined_df.sort_values(
+                        by=sort_column, 
+                        ascending=(sort_direction == "Ascending"),
+                        na_position='last'
+                    )
+            else:
+                combined_df_sorted = combined_df
+            
+            # Function to get color based on value
+            def get_cell_color(value):
+                if pd.isna(value):
+                    return "transparent"
+                if value < 0:
+                    return "#DA261F"
+                elif 1 <= value <= 3:
+                    return "#DAC41F"
+                elif value > 3:
+                    return "#1FDA2C"
+                else:
+                    return "#BDBDBD"  # value = 0
+            
+            # Create styled HTML table
+            table_html = """
+            <style>
+            .comparison-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin: 5px 0;
+                font-size: 12px;
+            }
+            .comparison-table th, .comparison-table td {
+                border: 1px solid #ddd;
+                padding: 4px 6px;
+                text-align: center;
+            }
+            .comparison-table th {
+                font-weight: bold;
+                font-size: 11px;
+                background-color: transparent;
+            }
+            .comparison-table td:first-child, .comparison-table td:nth-child(2) {
+                text-align: left;
+            }
+            .cell-red { background-color: #DA261F; color: white; }
+            .cell-yellow { background-color: #DAC41F; color: black; }
+            .cell-green { background-color: #1FDA2C; color: white; }
+            .cell-gray { background-color: #BDBDBD; color: black; }
+            </style>
+            <table class="comparison-table">
+            """
+            
+            # Add header
+            table_html += "<tr><th>EL</th><th>EL Text</th>"
+            for j, question_code in enumerate(selected_el_question_codes):
+                table_html += f"<th>Value - Q{j+1} ({question_code})</th>"
+            table_html += "</tr>"
+            
+            # Add data rows (sorted)
+            for _, row in combined_df_sorted.iterrows():
+                table_html += "<tr>"
+                table_html += f"<td>{row['EL']}</td>"
+                table_html += f"<td>{row['EL Text']}</td>"
+                
+                for j, question_code in enumerate(selected_el_question_codes):
+                    col_name = f"Value - Q{j+1} ({question_code})"
+                    value = row[col_name]
+                    
+                    if pd.isna(value):
+                        table_html += f'<td>-</td>'
+                    else:
+                        color_class = ""
+                        if value < 0:
+                            color_class = "cell-red"
+                        elif 1 <= value <= 3:
+                            color_class = "cell-yellow"
+                        elif value > 3:
+                            color_class = "cell-green"
+                        else:
+                            color_class = "cell-gray"
+                        
+                        table_html += f'<td class="{color_class}">{value:.1f}</td>'
+                
+                table_html += "</tr>"
+            
+            table_html += "</table>"
+            
+            st.markdown(table_html, unsafe_allow_html=True)
+
+        # Process each selected question code for individual charts
         for idx, selected_el_question_code in enumerate(selected_el_question_codes):
             st.markdown(f"### EL Bar Chart - Question {idx + 1}: {selected_el_question_code}")
             
@@ -463,24 +640,10 @@ def main():
                         })
 
                 display_df = pd.DataFrame(rows)
-                # -------------------------
-                # Display table
-                # -------------------------
-                with st.expander(f"View Data Table - Question {idx + 1}"):
-                    st.data_editor(
-                        display_df,
-                        use_container_width=True,
-                        hide_index=True,
-                        column_config={
-                            "EL": st.column_config.TextColumn("EL", width="small"),
-                            "EL Text": st.column_config.TextColumn("EL Text", width="large"),
-                            "Value": st.column_config.NumberColumn("Value", width="small")
-                        }
-                    )
 
-                # -------------------------
-                # EL BAR CHART CONTROLS
-                # -------------------------
+            # -------------------------
+            # EL BAR CHART CONTROLS
+            # -------------------------
                 st.markdown(f"#### Chart Controls - Question {idx + 1}")
 
                 el_orientation = st.radio(
