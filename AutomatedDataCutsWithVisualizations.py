@@ -549,9 +549,9 @@ def main():
             .comparison-table td:first-child, .comparison-table td:nth-child(2) {
                 text-align: left;
             }
-            .cell-red { background-color: #DA261F; color: white; }
+            .cell-red { background-color: #DA261F; color: black; }
             .cell-yellow { background-color: #DAC41F; color: black; }
-            .cell-green { background-color: #1FDA2C; color: white; }
+            .cell-green { background-color: #1FDA2C; color: black; }
             .cell-gray { background-color: #BDBDBD; color: black; }
             </style>
             <table class="comparison-table">
