@@ -21,27 +21,43 @@ dataset_option = st.sidebar.selectbox(
 if dataset_option == "Sports Fandom Study":
     responses_table = "responses_1"
     question_mapping_table = "question_mapping_1"
+    FE_responses_table = "FE_responses_1"
+    FE_EL_mapping_table = "FE_EL_mapping_1"
 elif dataset_option == "Content Fandom Study":
     responses_table = "responses_2"
     question_mapping_table = "question_mapping_2"
+    FE_responses_table = "FE_responses_2"
+    FE_EL_mapping_table = "FE_EL_mapping_2"
 elif dataset_option == "Linear TV Study":
     responses_table = "responses_4"
     question_mapping_table = "question_mapping_4"
+    FE_responses_table = "FE_responses_4"
+    FE_EL_mapping_table = "FE_EL_mapping_4"
 elif dataset_option == "Drivers of Sports Fandom (new)":
     responses_table = "responses_5"
     question_mapping_table = "question_mapping_5"
+    FE_responses_table = "FE_responses_5"
+    FE_EL_mapping_table = "FE_EL_mapping_5"
 elif dataset_option == "Shark Tank Study":
     responses_table = "responses_6"
     question_mapping_table = "question_mapping_6"
+    FE_responses_table = "FE_responses_6"
+    FE_EL_mapping_table = "FE_EL_mapping_6"
 elif dataset_option == "Female Focused Media Study":
     responses_table = "responses_7"
     question_mapping_table = "question_mapping_7"
+    FE_responses_table = "FE_responses_7"
+    FE_EL_mapping_table = "FE_EL_mapping_7"
 elif dataset_option == "Morning Drive Study":
     responses_table = "responses_8"
     question_mapping_table = "question_mapping_8"
+    FE_responses_table = "FE_responses_8"
+    FE_EL_mapping_table = "FE_EL_mapping_8"
 else:  # Test Dataset
     responses_table = "responses_3"
     question_mapping_table = "question_mapping_3"
+    FE_responses_table = "FE_responses_3"
+    FE_EL_mapping_table = "FE_EL_mapping_3"
 
 
 # Function to apply user-customized theme
@@ -378,9 +394,9 @@ def main():
 # EL SECTION
 # =========================
 
-    el_question_codes_query = """
+    el_question_codes_query = f"""
     SELECT DISTINCT question_code, answer_text
-    FROM FE_responses_6
+    FROM {FE_responses_table}
     ORDER BY question_code
     """
     el_question_codes_df = pd.read_sql(el_question_codes_query, connection)
@@ -410,9 +426,9 @@ def main():
     if selected_el_question_codes:
 
     # Fetch EL mapping (get once)
-        el_mapping_query = """
+        el_mapping_query = f"""
         SELECT el_code, el_text
-        FROM FE_EL_mapping_6
+        FROM {FE_EL_mapping_table}
         ORDER BY el_order
         """
         el_mapping_df = pd.read_sql(el_mapping_query, connection)
@@ -424,9 +440,9 @@ def main():
         
         for selected_el_question_code in selected_el_question_codes:
             # Fetch EL1–EL24 values for the selected question_code
-            el_values_query = """
+            el_values_query = f"""
             SELECT *
-            FROM FE_responses_6
+            FROM {FE_responses_table}
             WHERE question_code = %s
             LIMIT 1
             """
@@ -438,8 +454,9 @@ def main():
 
             if not el_values_df.empty:
                 values_dict = {}
-                for i in range(1, 25):  # EL_1 to EL_24
-                    el_column = f"EL_{i}"
+                # Iterate through all EL codes from the mapping table
+                for _, el_row in el_mapping_df.iterrows():
+                    el_column = el_row["el_code"]
                     if el_column in el_values_df.columns:
                         values_dict[el_column] = el_values_df.iloc[0][el_column]
                 
@@ -448,18 +465,10 @@ def main():
         # Create combined comparison dataframe
         if comparison_data:
             combined_rows = []
-            for i in range(1, 25):  # EL_1 to EL_24
-                el_column = f"EL_{i}"
-                
-                # Get EL text
-                el_text_match = el_mapping_df.loc[
-                    el_mapping_df["el_code"] == el_column, "el_text"
-                ]
-                el_text = (
-                    el_text_match.iloc[0]
-                    if not el_text_match.empty
-                    else "(No Text)"
-                )
+            # Iterate through all EL codes from the mapping table
+            for _, el_row in el_mapping_df.iterrows():
+                el_column = el_row["el_code"]
+                el_text = el_row["el_text"]
                 
                 # Create row with EL info and values from each question
                 row_data = {
@@ -513,19 +522,6 @@ def main():
                     )
             else:
                 combined_df_sorted = combined_df
-            
-            # Function to get color based on value
-            def get_cell_color(value):
-                if pd.isna(value):
-                    return "transparent"
-                if value < 0:
-                    return "#DA261F"
-                elif 1 <= value <= 3:
-                    return "#DAC41F"
-                elif value > 3:
-                    return "#1FDA2C"
-                else:
-                    return "#BDBDBD"  # value = 0
             
             # Create styled HTML table
             table_html = """
@@ -599,9 +595,9 @@ def main():
             st.markdown(f"### EL Bar Chart - Question {idx + 1}: {selected_el_question_code}")
             
             # Fetch EL1–EL24 values for the selected question_code
-            el_values_query = """
+            el_values_query = f"""
             SELECT *
-            FROM FE_responses_6
+            FROM {FE_responses_table}
             WHERE question_code = %s
             LIMIT 1
             """
@@ -615,29 +611,24 @@ def main():
                 # -------------------------
                 # Build display dataframe
                 # -------------------------
-                rows = []
+                rows = [] 
 
-                for i in range(1, 25):  # EL_1 to EL_24
-                    el_column = f"EL_{i}"
+                # Iterate through all EL codes from the mapping table
+                for _, el_row in el_mapping_df.iterrows():
+                    el_column = el_row["el_code"]
 
                     if el_column in el_values_df.columns:
                         el_value = el_values_df.iloc[0][el_column]
+                        el_text = el_row["el_text"]
+                    else:
+                        el_value = None
+                        el_text = el_row["el_text"]
 
-                        el_text_match = el_mapping_df.loc[
-                            el_mapping_df["el_code"] == el_column, "el_text"
-                        ]
-
-                        el_text = (
-                            el_text_match.iloc[0]
-                            if not el_text_match.empty
-                            else "(No Text)"
-                        )
-
-                        rows.append({
-                            "EL": el_column,
-                            "EL Text": el_text,
-                            "Value": el_value
-                        })
+                    rows.append({
+                        "EL": el_column,
+                        "EL Text": el_text,
+                        "Value": el_value
+                    })
 
                 display_df = pd.DataFrame(rows)
 
