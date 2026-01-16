@@ -555,8 +555,8 @@ def main():
             }
             .comparison-table td:nth-child(2) {
                 text-align: left;
-                width: 350px;
-                max-width: 400px;
+                width: 365px;
+                max-width: 450px;
             }
             .cell-red { background-color: #DA261F; color: black; }
             .cell-yellow { background-color: #DAC41F; color: black; }
