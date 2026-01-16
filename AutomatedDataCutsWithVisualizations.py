@@ -403,7 +403,13 @@ def main():
 
     ##Build label → value mapping
     el_label_to_code = {
-        f"{row['question_code']} , {row['answer_text']}": row['question_code']
+        f"{row['question_code']} {row['answer_text']}": row['question_code']
+        for _, row in el_question_codes_df.iterrows()
+    }
+    
+    # Build question_code to answer_text mapping for headers
+    el_code_to_answer = {
+        row['question_code']: row['answer_text']
         for _, row in el_question_codes_df.iterrows()
     }
 
@@ -479,7 +485,8 @@ def main():
                 # Add values for each selected question code
                 for j, question_code in enumerate(selected_el_question_codes):
                     if question_code in comparison_data:
-                        row_data[f"Value - Q{j+1} ({question_code})"] = comparison_data[question_code].get(el_column, None)
+                        answer_text = el_code_to_answer.get(question_code, "")
+                        row_data[f"({question_code}) {answer_text}"] = comparison_data[question_code].get(el_column, None)
                 
                 combined_rows.append(row_data)
 
@@ -493,7 +500,7 @@ def main():
             with col1:
                 sort_column = st.selectbox(
                     "Sort by:",
-                    ["EL", "EL Text"] + [f"Value - Q{j+1} ({qc})" for j, qc in enumerate(selected_el_question_codes)],
+                    ["EL", "EL Text"] + [f"({qc}) {el_code_to_answer.get(qc, '')}" for qc in selected_el_question_codes],
                     key="sort_column"
                 )
             with col2:
@@ -506,8 +513,8 @@ def main():
             
             # Apply sorting
             if sort_column in combined_df.columns:
-                if sort_column.startswith("Value -"):
-                    # Numeric sorting for value columns
+                if sort_column.startswith("("):
+                    # Numeric sorting for value columns (columns that start with parentheses)
                     combined_df_sorted = combined_df.sort_values(
                         by=sort_column, 
                         ascending=(sort_direction == "Ascending"),
@@ -530,11 +537,11 @@ def main():
                 width: 100%;
                 border-collapse: collapse;
                 margin: 5px 0;
-                font-size: 12px;
+                font-size: 13px;
             }
             .comparison-table th, .comparison-table td {
                 border: 1px solid #ddd;
-                padding: 4px 6px;
+                padding: 2px 8px;
                 text-align: center;
             }
             .comparison-table th {
@@ -542,8 +549,14 @@ def main():
                 font-size: 11px;
                 background-color: transparent;
             }
-            .comparison-table td:first-child, .comparison-table td:nth-child(2) {
+            .comparison-table td:first-child {
                 text-align: left;
+                width: 80px;
+            }
+            .comparison-table td:nth-child(2) {
+                text-align: left;
+                width: 350px;
+                max-width: 400px;
             }
             .cell-red { background-color: #DA261F; color: black; }
             .cell-yellow { background-color: #DAC41F; color: black; }
@@ -555,8 +568,9 @@ def main():
             
             # Add header
             table_html += "<tr><th>EL</th><th>EL Text</th>"
-            for j, question_code in enumerate(selected_el_question_codes):
-                table_html += f"<th>Value - Q{j+1} ({question_code})</th>"
+            for question_code in selected_el_question_codes:
+                answer_text = el_code_to_answer.get(question_code, "")
+                table_html += f"<th>({question_code}) {answer_text}</th>"
             table_html += "</tr>"
             
             # Add data rows (sorted)
@@ -565,8 +579,9 @@ def main():
                 table_html += f"<td>{row['EL']}</td>"
                 table_html += f"<td>{row['EL Text']}</td>"
                 
-                for j, question_code in enumerate(selected_el_question_codes):
-                    col_name = f"Value - Q{j+1} ({question_code})"
+                for question_code in selected_el_question_codes:
+                    answer_text = el_code_to_answer.get(question_code, "")
+                    col_name = f"({question_code}) {answer_text}"
                     value = row[col_name]
                     
                     if pd.isna(value):
