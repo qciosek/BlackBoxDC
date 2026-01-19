@@ -493,7 +493,7 @@ def main():
             combined_df = pd.DataFrame(combined_rows)
             
             # Display combined comparison table with server-side sorting
-            st.markdown("### 📊 EL Values Comparison Table")
+            st.markdown(f"### 📊 Front End Statements - {dataset_option}")
             
             # Add sorting controls
             col1, col2 = st.columns([2, 1])
