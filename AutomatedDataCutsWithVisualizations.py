@@ -433,7 +433,7 @@ def main():
 
     # Fetch EL mapping (get once)
         el_mapping_query = f"""
-        SELECT el_code, el_text, el_category
+        SELECT el_code, el_text, el_category, el_question
         FROM {FE_EL_mapping_table}
         ORDER BY el_order
         """
@@ -494,6 +494,21 @@ def main():
             
             # Display combined comparison table with server-side sorting
             st.markdown(f"### 📊 Front End Statements - {dataset_option}")
+            
+            # Display EL question text above the table
+            if selected_el_question_codes:
+                for question_code in selected_el_question_codes:
+                    answer_text = el_code_to_answer.get(question_code, "")
+                    # Get question_text from FE_responses table
+                    question_text_query = f"""
+                    SELECT DISTINCT question_text
+                    FROM {FE_responses_table}
+                    WHERE question_code = %s
+                    LIMIT 1
+                    """
+                    question_text_df = pd.read_sql(question_text_query, connection, params=[question_code])
+                    question_text = question_text_df.iloc[0]['question_text'] if not question_text_df.empty else ""
+                    st.markdown(f"**{question_code} - {answer_text} - {question_text}**")
             
             # Add sorting controls
             col1, col2 = st.columns([2, 1])
@@ -567,16 +582,18 @@ def main():
             """
             
             # Add header
-            table_html += "<tr><th>EL</th><th>EL Text</th>"
+            el_question_header = el_mapping_df.iloc[0]['el_question'] if 'el_question' in el_mapping_df.columns else "EL Question"
+            table_html += f"<tr><th>EL</th><th>{el_question_header}</th>"
             for question_code in selected_el_question_codes:
                 answer_text = el_code_to_answer.get(question_code, "")
                 table_html += f"<th>({question_code}) {answer_text}</th>"
             table_html += "</tr>"
             
             # Add data rows (sorted)
-            for _, row in combined_df_sorted.iterrows():
+            for idx, row in combined_df_sorted.iterrows():
                 table_html += "<tr>"
                 table_html += f"<td>{row['EL']}</td>"
+                # All rows show el_text
                 table_html += f"<td>{row['EL Text']}</td>"
                 
                 for question_code in selected_el_question_codes:
