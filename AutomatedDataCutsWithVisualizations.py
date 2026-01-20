@@ -513,17 +513,23 @@ def main():
             # Add sorting controls
             col1, col2 = st.columns([2, 1])
             with col1:
+                # Default to first selected question code
+                sort_options = ["EL", "EL Text"] + [f"({qc}) {el_code_to_answer.get(qc, '')}" for qc in selected_el_question_codes]
+                default_sort = f"({selected_el_question_codes[0]}) {el_code_to_answer.get(selected_el_question_codes[0], '')}" if selected_el_question_codes else "EL"
+                default_index = sort_options.index(default_sort) if default_sort in sort_options else 0
                 sort_column = st.selectbox(
                     "Sort by:",
-                    ["EL", "EL Text"] + [f"({qc}) {el_code_to_answer.get(qc, '')}" for qc in selected_el_question_codes],
-                    key="sort_column"
+                    sort_options,
+                    key="sort_column",
+                    index=default_index
                 )
             with col2:
                 sort_direction = st.radio(
                     "Direction:",
                     ["Ascending", "Descending"],
                     key="sort_direction",
-                    horizontal=True
+                    horizontal=True,
+                    index=1  # Default to Descending
                 )
             
             # Apply sorting
