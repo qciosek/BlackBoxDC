@@ -510,6 +510,85 @@ def main():
                     question_text = question_text_df.iloc[0]['question_text'] if not question_text_df.empty else ""
                     st.markdown(f"**{question_code} - {answer_text} - {question_text}**")
             
+            # Calculate and display cumulative scores above the table
+            cumulative_html = """
+            <style>
+            .cumulative-container {
+                margin: 10px 0;
+                padding: 10px;
+                border: 1px solid #dee2e6;
+                border-radius: 5px;
+                background-color: transparent;
+            }
+            .cumulative-table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 14px;
+                font-weight: bold;
+            }
+            .cumulative-table th, .cumulative-table td {
+                padding: 8px;
+                text-align: center;
+                border: 1px solid #dee2e6;
+            }
+            .cumulative-table th {
+                background-color: #e9ecef;
+                color: #000;
+            }
+            .cell-red { background-color: #DA261F; color: white; font-weight: bold; }
+            .cell-yellow { background-color: #DAC41F; color: black; font-weight: bold; }
+            .cell-green { background-color: #1FDA2C; color: black; font-weight: bold; }
+            </style>
+            <div class="cumulative-container">
+                <table class="cumulative-table">
+                    <tr>
+                        <th>Cumulative Score</th>
+            """
+            
+            for question_code in selected_el_question_codes:
+                answer_text = el_code_to_answer.get(question_code, "")
+                col_name = f"({question_code}) {answer_text}"
+                cumulative_html += f"<th>({question_code}) {answer_text}</th>"
+            
+            cumulative_html += "</tr><tr><td>Cumulative Score</td>"
+            
+            for question_code in selected_el_question_codes:
+                answer_text = el_code_to_answer.get(question_code, "")
+                col_name = f"({question_code}) {answer_text}"
+                
+                # Calculate sum of all EL values for this question
+                cumulative_sum = 0
+                for _, row in combined_df.iterrows():
+                    value = row[col_name]
+                    if not pd.isna(value):
+                        cumulative_sum += value
+                
+                # Get the constant value from the FE_responses table for this question_code
+                constant_query = f"""
+                SELECT constant
+                FROM {FE_responses_table}
+                WHERE question_code = %s
+                LIMIT 1
+                """
+                constant_df = pd.read_sql(constant_query, connection, params=[question_code])
+                constant_value = constant_df.iloc[0]['constant'] if not constant_df.empty and 'constant' in constant_df.columns else 0
+                
+                # Add constant to the sum
+                total_score = cumulative_sum + constant_value
+                
+                # Apply color coding based on total score
+                if total_score < 130:
+                    color_class = "cell-red"
+                elif 130 <= total_score <= 150:
+                    color_class = "cell-yellow"
+                else:  # total_score >= 151
+                    color_class = "cell-green"
+                
+                cumulative_html += f'<td class="{color_class}">{total_score:.0f}</td>'
+            
+            cumulative_html += "</tr></table></div>"
+            st.markdown(cumulative_html, unsafe_allow_html=True)
+            
             # Add sorting controls
             col1, col2 = st.columns([2, 1])
             with col1:
@@ -623,47 +702,6 @@ def main():
                         table_html += f'<td class="{color_class}">{value:.0f}</td>'
                 
                 table_html += "</tr>"
-            
-            # Add cumulative score row
-            table_html += "<tr style='font-weight: bold; border-top: 2px solid #333;'>"
-            table_html += "<td> </td>"
-            table_html += "<td>Cumulative Score</td>"
-            
-            for question_code in selected_el_question_codes:
-                answer_text = el_code_to_answer.get(question_code, "")
-                col_name = f"({question_code}) {answer_text}"
-                
-                # Calculate sum of all EL values for this question
-                cumulative_sum = 0
-                for _, row in combined_df_sorted.iterrows():
-                    value = row[col_name]
-                    if not pd.isna(value):
-                        cumulative_sum += value
-                
-                # Get the constant value from the FE_responses table for this question_code
-                constant_query = f"""
-                SELECT constant
-                FROM {FE_responses_table}
-                WHERE question_code = %s
-                LIMIT 1
-                """
-                constant_df = pd.read_sql(constant_query, connection, params=[question_code])
-                constant_value = constant_df.iloc[0]['constant'] if not constant_df.empty and 'constant' in constant_df.columns else 0
-                
-                # Add constant to the sum
-                total_score = cumulative_sum + constant_value
-                
-                # Apply color coding based on total score
-                if total_score < 130:
-                    color_class = "cell-red"
-                elif 130 <= total_score <= 150:
-                    color_class = "cell-yellow"
-                else:  # total_score >= 151
-                    color_class = "cell-green"
-                
-                table_html += f'<td class="{color_class}">{total_score:.0f}</td>'
-            
-            table_html += "</tr>"
             
             table_html += "</table>"
             
