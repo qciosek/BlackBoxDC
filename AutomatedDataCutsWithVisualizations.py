@@ -624,6 +624,47 @@ def main():
                 
                 table_html += "</tr>"
             
+            # Add cumulative score row
+            table_html += "<tr style='font-weight: bold; border-top: 2px solid #333;'>"
+            table_html += "<td> </td>"
+            table_html += "<td>Cumulative Score</td>"
+            
+            for question_code in selected_el_question_codes:
+                answer_text = el_code_to_answer.get(question_code, "")
+                col_name = f"({question_code}) {answer_text}"
+                
+                # Calculate sum of all EL values for this question
+                cumulative_sum = 0
+                for _, row in combined_df_sorted.iterrows():
+                    value = row[col_name]
+                    if not pd.isna(value):
+                        cumulative_sum += value
+                
+                # Get the constant value from the FE_responses table for this question_code
+                constant_query = f"""
+                SELECT constant
+                FROM {FE_responses_table}
+                WHERE question_code = %s
+                LIMIT 1
+                """
+                constant_df = pd.read_sql(constant_query, connection, params=[question_code])
+                constant_value = constant_df.iloc[0]['constant'] if not constant_df.empty and 'constant' in constant_df.columns else 0
+                
+                # Add constant to the sum
+                total_score = cumulative_sum + constant_value
+                
+                # Apply color coding based on total score
+                if total_score < 130:
+                    color_class = "cell-red"
+                elif 130 <= total_score <= 150:
+                    color_class = "cell-yellow"
+                else:  # total_score >= 151
+                    color_class = "cell-green"
+                
+                table_html += f'<td class="{color_class}">{total_score:.0f}</td>'
+            
+            table_html += "</tr>"
+            
             table_html += "</table>"
             
             st.markdown(table_html, unsafe_allow_html=True)
