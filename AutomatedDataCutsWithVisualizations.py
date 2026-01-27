@@ -884,6 +884,121 @@ def main():
                 df['cutpercentage_numeric'] = df['cutpercentage'].str.replace('%', '').astype(float)
                 df['avg_yes_percentage_numeric'] = df['avg_yes_percentage'].str.replace('%', '').astype(float)
 
+                csv_buffer = io.StringIO()
+                df.to_csv(csv_buffer, index=False)
+                csv_buffer.seek(0)
+
+                st.download_button(
+                    label="Download CSV",
+                    data=csv_buffer.getvalue(),
+                    file_name=f"backend_data_cut_{question_code}.csv",
+                    mime="text/csv",
+                    key=f"backend_download_{question_code}"
+                )
+                 
+                # ---- Generate Dashboard Button ----
+                
+                # Button that sets session state
+                if st.button("Generate Dashboard", key=f"backend_dashboard_btn_{question_code}"):
+                    st.session_state[f'show_backend_dashboard_{question_code}'] = True
+
+                # Persist dashboard on interactions
+                if st.session_state.get(f'show_backend_dashboard_{question_code}', False):
+                    # ---- DEMOGRAPHICS SECTION ----  
+                    demo_df = df[df['question_code'].str.match(r'^Q1[0-9]')]  # Assuming demographics start with Q1X
+
+                    if not demo_df.empty:
+                        st.markdown("### 👥 Demographics")
+                        unique_q_codes = demo_df['q_question_code'].unique()
+
+                        for i in range(0, len(unique_q_codes), 2):  # 2 columns per row
+                            row_q_codes = unique_q_codes[i:i + 2]
+                            cols = st.columns(2)
+
+                            for col, q_code in zip(cols, row_q_codes):
+                                subset = demo_df[demo_df['q_question_code'] == q_code].nlargest(5, 'cutpercentage_numeric')
+                                if not subset.empty:
+                                    s_question_text = subset['s_question_text'].iloc[0] if 's_question_text' in subset.columns else ""
+                                    with col:
+                                        st.write(f"**{q_code}: {s_question_text}**")
+                                        st.dataframe(subset[['answer_text', 'cutpercentage', 'index']].reset_index(drop=True),
+                                                    height = 210
+                                                    )
+                        # --- Select Metric ---
+                                metric_col, chart_col = st.columns(2)
+
+                                with metric_col:
+                                    st.markdown("**Select Metric**")
+                                    metric_cut = st.checkbox("Cut Percentage", value=True, key=f"backend_metric_cut_{q_code}_{question_code}")
+                                    metric_index = st.checkbox("Index", value=False, key=f"backend_metric_index_{q_code}_{question_code}")
+
+                                with chart_col:
+                                    st.markdown("**Select Chart**")
+                                    show_bar = st.checkbox("Bar Chart", key=f"backend_bar_{q_code}_{question_code}")
+                                    show_pie = st.checkbox("Pie Chart", key=f"backend_pie_{q_code}_{question_code}")
+                        # Determine selected metric (prioritize cut > avg > index)
+                                if metric_cut:
+                                    metric = 'cutpercentage_numeric'
+                                elif metric_index:
+                                    metric = 'index'
+                                else:
+                                    metric = 'cutpercentage_numeric'  # fallback
+
+                        # Render charts
+                                if show_bar:
+                                    fig, ax = plt.subplots(figsize=(4, 3))  # smaller figure
+                                    ax.barh(subset['answer_text'], subset[metric])
+                                    ax.set_title(f"{q_code} - {s_question_text}")
+                                    ax.set_xlabel(metric.replace("cutpercentage_numeric", "Cut Percentage").title())
+                                    ax.set_ylabel("Answers")
+                                    st.pyplot(fig)
+
+                                if show_pie:
+                                    fig, ax = plt.subplots(figsize=(3, 4))  # smaller figure
+                                    ax.pie(subset[metric], labels=subset['answer_text'], autopct="%1.1f%%")
+                                    ax.set_title(f"{q_code} - {s_question_text}")
+                                    st.pyplot(fig)
+
+                    # ---- CONTENT SECTION ----
+                    content_df = df[df['question_code'].str.match(r'^Q[2-5][0-9]')]  # Assuming content is Q2X-Q5X
+
+                    if not content_df.empty:
+                        st.markdown("### 📌 Content (Top 5 listed)")
+
+                        # ✅ 1. Define the question order you want
+                        desired_order = ["Q15", "Q17", "Q16", "Q20", "Q5", "Q4"]
+
+                        # ✅ 2. Add a sorting key based on desired order
+                        content_df['sort_order'] = content_df['q_question_code'].apply(
+                            lambda x: desired_order.index(x) if x in desired_order else len(desired_order)
+                        )
+
+                        # ✅ 3. Sort the dataframe by the custom order
+                        content_df = content_df.sort_values(by='sort_order')
+
+                        # ✅ 4. Get q_question_code in sorted order
+                        unique_q_codes = content_df['q_question_code'].unique()
+
+                        for i in range(0, len(unique_q_codes), 3):
+                            row_q_codes = unique_q_codes[i:i + 3]
+                            cols = st.columns(3)
+
+                            for col, q_code in zip(cols, row_q_codes):
+                                subset = content_df[content_df['q_question_code'] == q_code].nlargest(5, 'cutpercentage_numeric')
+                                if not subset.empty:
+                                    s_question_text = subset['s_question_text'].iloc[0] if 's_question_text' in subset.columns else ""
+                                    with col:
+                                        st.write(f"**{q_code}: {s_question_text}**")
+                                        df_to_display = subset[['answer_text', 'cutpercentage', 'index']].reset_index(drop=True)
+                                        st.dataframe(df_to_display)
+
+                    # ---- BRANDS SECTION ----
+                    brands_df = df[df['question_code'].str.match(r'^Q[6-9][0-9]')]  # Assuming brands are Q6X-Q9X
+                    if not brands_df.empty:
+                        st.markdown("### 🏷️ Brands (Top 20)")
+                        brands_top20 = brands_df.nlargest(20, 'index')
+                        st.dataframe(brands_top20[['q_question_code', 'answer_text', 'cutpercentage', 'index']].reset_index(drop=True))
+
                 # Create dropdown labels for this data cut
                 df['dropdown_label'] = df['answer_text'] + ",   " + df['question_code'] + ",   " + df['question_text']
                 
