@@ -550,7 +550,15 @@ def main():
                 col_name = f"({question_code}) {answer_text}"
                 cumulative_html += f"<th>({question_code}) {answer_text}</th>"
             
-            cumulative_html += "</tr><tr><td>Cumulative Score</td>"
+            # Set the score label based on dataset
+            if dataset_option == "Sports Fandom Study":
+                score_label = "Olympian Engagement Score"
+            elif dataset_option == "Shark Tank Study":
+                score_label = "Driven to Watch Shark Tank Score"
+            else:
+                score_label = "Cumulative Score"
+            
+            cumulative_html += f"</tr><tr><td>{score_label}</td>"
             
             for question_code in selected_el_question_codes:
                 answer_text = el_code_to_answer.get(question_code, "")
