@@ -845,6 +845,117 @@ def main():
                 
                 summary_html += "</table>"
                 st.markdown(summary_html, unsafe_allow_html=True)
+        
+        # Add button for generating backend data cut for each selected EL question
+        if selected_el_question_codes:
+            for question_code in selected_el_question_codes:
+                answer_text = el_code_to_answer.get(question_code, "")
+                button_text = f"Generate {answer_text} Backend"
+                
+                if st.button(button_text, key=f"backend_btn_{question_code}"):
+                    # Generate data cut for this question_code
+                    with st.spinner(f"Generating data cut for {question_code} - {answer_text}..."):
+                        try:
+                            # Use the existing fetch_data_and_sample_size function
+                            df, sample_size = fetch_data_and_sample_size(connection, [question_code])
+                            
+                            if not df.empty:
+                                # Store in session state to persist across reruns
+                                st.session_state[f'backend_df_{question_code}'] = df
+                                st.session_state[f'backend_sample_{question_code}'] = sample_size
+                                st.session_state[f'backend_answer_text_{question_code}'] = answer_text
+                            else:
+                                st.warning(f"No data found for question code: {question_code}")
+                        except Exception as e:
+                            st.error(f"Error generating data cut: {str(e)}")
+        
+        # Display data cut if it exists in session state
+        for question_code in selected_el_question_codes:
+            if f'backend_df_{question_code}' in st.session_state:
+                df = st.session_state[f'backend_df_{question_code}']
+                sample_size = st.session_state[f'backend_sample_{question_code}']
+                answer_text = st.session_state[f'backend_answer_text_{question_code}']
+                
+                st.markdown(f"### 📊 Data Cut - {question_code} - {answer_text}")
+                st.write(f"Sample Size = {sample_size}")
+                st.write("Data fetched from MySQL:")
+                st.dataframe(df)
+
+                df['cutpercentage_numeric'] = df['cutpercentage'].str.replace('%', '').astype(float)
+                df['avg_yes_percentage_numeric'] = df['avg_yes_percentage'].str.replace('%', '').astype(float)
+
+                # Create dropdown labels for this data cut
+                df['dropdown_label'] = df['answer_text'] + ",   " + df['question_code'] + ",   " + df['question_text']
+                
+                # Get unique q_question_codes for selection (like original)
+                unique_q_question_codes = df[['q_question_code', 's_question_text']].drop_duplicates()
+                q_question_code_mapping = {
+                    f"{row.q_question_code} - {row.s_question_text}": row.q_question_code
+                    for row in unique_q_question_codes.itertuples()
+                }
+                
+                # Create dropdown options list
+                q_question_code_options = ["No Question Code"] + list(q_question_code_mapping.keys())
+                
+                # Select Question Codes
+                selected_q_question_codes_display = st.multiselect(
+                    f"Optional: Select Question Codes to Auto-Select Answers for {answer_text}:",
+                    q_question_code_options,
+                    key=f"backend_q_codes_{question_code}"
+                )
+                
+                # Convert selected display values back to actual q_question_code
+                selected_q_question_codes = [
+                    q_question_code_mapping[option] for option in selected_q_question_codes_display if option != "No Question Code"
+                ]
+                
+                # Auto-select answers based on selected q_question_codes
+                if selected_q_question_codes:
+                    auto_selected_answers = df[
+                        df['q_question_code'].isin(selected_q_question_codes)
+                    ]['dropdown_label'].tolist()
+                else:
+                    auto_selected_answers = []
+                
+                # Bar Chart Answer Selection (with auto-selected answers)
+                selected_answers = st.multiselect(
+                    f"Select answers to display in the bar chart for {answer_text}:",
+                    df['dropdown_label'].tolist(),
+                    default=auto_selected_answers,
+                    key=f"backend_answers_{question_code}"
+                )
+
+                st.subheader(f"Bar Chart Visualization - {answer_text}")
+                
+                # Chart controls - exactly like original
+                display_avg_yes = st.checkbox("Display Total Sample Percentages", value=False, key=f"backend_avg_yes_{question_code}")
+                display_cut_percentage = st.checkbox("Display Data Cut Percentages", value=True, key=f"backend_cut_{question_code}")
+                display_index = st.checkbox("Display Index", value=False, key=f"backend_index_{question_code}")
+
+                bar_color_cut = st.color_picker("Pick a Bar Color for Data Cut Percentages", "#0F0FE4", key=f"backend_color_cut_{question_code}")
+                bar_color_yes = st.color_picker("Pick a Bar Color for Total Sample Percentages", "#B50C0C", key=f"backend_color_yes_{question_code}")
+                bar_color_index = st.color_picker("Pick a Bar Color for Index", "#2ca02c", key=f"backend_color_index_{question_code}")
+                orientation = st.radio("Choose Chart Orientation", ["Vertical", "Horizontal"], index=1, key=f"backend_orient_{question_code}")
+
+                if selected_answers:
+                    selected_question_codes = df[
+                        df['dropdown_label'].isin(selected_answers)
+                    ]['question_code'].tolist()
+
+                    filtered_df = df[df['question_code'].isin(selected_question_codes)]
+
+                    plot_bar_chart_with_editable_labels(
+                        filtered_df,
+                        display_cut_percentage,
+                        display_avg_yes,
+                        display_index,
+                        bar_color_cut,
+                        bar_color_yes,
+                        bar_color_index,
+                        orientation
+                    )
+                else:
+                    st.write(f"Please select answers to display on the bar chart for {answer_text}.")
 
         # Process each selected question code for individual charts
         for idx, selected_el_question_code in enumerate(selected_el_question_codes):
