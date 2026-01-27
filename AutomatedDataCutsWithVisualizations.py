@@ -413,6 +413,14 @@ def main():
         for _, row in el_question_codes_df.iterrows()
     }
 
+    # Fetch question_df_all for dashboard categorization
+    question_query_all = f"""
+    SELECT question_code, answer_text, question_text, q_question_code, s_question_text, question_category AS category
+    FROM {question_mapping_table}
+    ORDER BY CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(question_code, 'Q', -1), '_', 1) AS UNSIGNED), question_code
+    """
+    question_df_all = pd.read_sql(question_query_all, connection)
+
 # Dropdown labels - allow multiple selection
     el_dropdown_options = ["Select a Question Code"] + list(el_label_to_code.keys())
 
@@ -905,7 +913,9 @@ def main():
                 # Persist dashboard on interactions
                 if st.session_state.get(f'show_backend_dashboard_{question_code}', False):
                     # ---- DEMOGRAPHICS SECTION ----  
-                    demo_df = df[df['question_code'].str.match(r'^Q1[0-9]')]  # Assuming demographics start with Q1X
+                    demo_df = df[df['question_code'].isin(
+                        question_df_all[question_df_all['category'] == 'Demographics']['question_code']
+                    )]
 
                     if not demo_df.empty:
                         st.markdown("### 👥 Demographics")
@@ -960,7 +970,9 @@ def main():
                                     st.pyplot(fig)
 
                     # ---- CONTENT SECTION ----
-                    content_df = df[df['question_code'].str.match(r'^Q[2-5][0-9]')]  # Assuming content is Q2X-Q5X
+                    content_df = df[df['question_code'].isin(
+                        question_df_all[question_df_all['category'] == 'Content']['question_code']
+                    )]
 
                     if not content_df.empty:
                         st.markdown("### 📌 Content (Top 5 listed)")
@@ -993,7 +1005,9 @@ def main():
                                         st.dataframe(df_to_display)
 
                     # ---- BRANDS SECTION ----
-                    brands_df = df[df['question_code'].str.match(r'^Q[6-9][0-9]')]  # Assuming brands are Q6X-Q9X
+                    brands_df = df[df['question_code'].isin(
+                        question_df_all[question_df_all['category'] == 'Brands']['question_code']
+                    )]
                     if not brands_df.empty:
                         st.markdown("### 🏷️ Brands (Top 20)")
                         brands_top20 = brands_df.nlargest(20, 'index')
