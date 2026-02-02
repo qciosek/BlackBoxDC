@@ -605,6 +605,137 @@ def main():
             cumulative_html += "</tr></table></div>"
             st.markdown(cumulative_html, unsafe_allow_html=True)
             
+            # -------------------------
+            # EL Category Summary Table
+            # -------------------------
+            if comparison_data and 'el_category' in el_mapping_df.columns:
+                st.markdown(f"### 📊 Front End Categories - {dataset_option}")
+                
+                # Calculate sums by category for each question
+                category_summary = {}
+                
+                for question_code in selected_el_question_codes:
+                    if question_code in comparison_data:
+                        category_sums = {}
+                        for _, el_row in el_mapping_df.iterrows():
+                            el_code = el_row["el_code"]
+                            el_category = el_row["el_category"]
+                            el_value = comparison_data[question_code].get(el_code, 0)
+                            
+                            if el_category not in category_sums:
+                                category_sums[el_category] = 0
+                            category_sums[el_category] += el_value if not pd.isna(el_value) else 0
+                        
+                        answer_text = el_code_to_answer.get(question_code, "")
+                        category_summary[f"({question_code}) {answer_text}"] = category_sums
+                
+                # Create summary dataframe
+                if category_summary:
+                    summary_rows = []
+                    all_categories = set()
+                    for col_data in category_summary.values():
+                        all_categories.update(col_data.keys())
+                    
+                    for category in sorted(all_categories):
+                        row_data = {"Category": category}
+                        for col_name in category_summary.keys():
+                            row_data[col_name] = category_summary[col_name].get(category, 0)
+                        summary_rows.append(row_data)
+                    
+                    summary_df = pd.DataFrame(summary_rows)
+                    
+                    # Add sorting controls for summary table
+                    col1, col2 = st.columns([2, 1])
+                    with col1:
+                        summary_sort_column = st.selectbox(
+                            "Sort summary by:",
+                            ["Category"] + list(category_summary.keys()),
+                            key="summary_sort_column"
+                        )
+                    with col2:
+                        summary_sort_direction = st.radio(
+                            "Summary Direction:",
+                            ["Ascending", "Descending"],
+                            key="summary_sort_direction",
+                            horizontal=True
+                        )
+                    
+                    # Apply sorting to summary table
+                    if summary_sort_column in summary_df.columns:
+                        if summary_sort_column == "Category":
+                            summary_df_sorted = summary_df.sort_values(
+                                by=summary_sort_column,
+                                ascending=(summary_sort_direction == "Ascending"),
+                                na_position='last'
+                            )
+                        else:
+                            # Numeric sorting for value columns
+                            summary_df_sorted = summary_df.sort_values(
+                                by=summary_sort_column,
+                                ascending=(summary_sort_direction == "Ascending"),
+                                na_position='last'
+                            )
+                    else:
+                        summary_df_sorted = summary_df
+                    
+                    # Create styled HTML summary table
+                    summary_html = """
+                    <style>
+                    .summary-table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin: 5px 0;
+                        font-size: 13px;
+                    }
+                    .summary-table th, .summary-table td {
+                        border: 1px solid #ddd;
+                        padding: 2px 8px;
+                        text-align: center;
+                    }
+                    .summary-table th {
+                        font-weight: bold;
+                        font-size: 11px;
+                        background-color: transparent;
+                    }
+                    .summary-table td:first-child {
+                        text-align: left;
+                        font-weight: bold;
+                    }
+                    </style>
+                    <table class="summary-table">
+                    """
+                    
+                    # Add header
+                    summary_html += "<tr><th>Category</th>"
+                    for col_name in category_summary.keys():
+                        summary_html += f"<th>{col_name}</th>"
+                    summary_html += "</tr>"
+                    
+                    # Add data rows
+                    for _, row in summary_df_sorted.iterrows():
+                        summary_html += "<tr>"
+                        summary_html += f"<td>{row['Category']}</td>"
+                        
+                        for col_name in category_summary.keys():
+                            value = row[col_name]
+                            # Apply conditional coloring for summary values
+                            color_class = ""
+                            if value < 0:
+                                color_class = "cell-red"
+                            elif 1 <= value <= 3:
+                                color_class = "cell-yellow"
+                            elif value > 3:
+                                color_class = "cell-green"
+                            else:
+                                color_class = "cell-gray"
+                            
+                            summary_html += f'<td class="{color_class}">{value:.0f}</td>'
+                        
+                        summary_html += "</tr>"
+                    
+                    summary_html += "</table>"
+                    st.markdown(summary_html, unsafe_allow_html=True)
+            
             # Add sorting controls
             col1, col2 = st.columns([2, 1])
             with col1:
@@ -721,138 +852,8 @@ def main():
             
             table_html += "</table>"
             
+            
             st.markdown(table_html, unsafe_allow_html=True)
-
-        # -------------------------
-        # EL Category Summary Table
-        # -------------------------
-        if comparison_data and 'el_category' in el_mapping_df.columns:
-            st.markdown(f"### 📊 EL Category Summary - {dataset_option}")
-            
-            # Calculate sums by category for each question
-            category_summary = {}
-            
-            for question_code in selected_el_question_codes:
-                if question_code in comparison_data:
-                    category_sums = {}
-                    for _, el_row in el_mapping_df.iterrows():
-                        el_code = el_row["el_code"]
-                        el_category = el_row["el_category"]
-                        el_value = comparison_data[question_code].get(el_code, 0)
-                        
-                        if el_category not in category_sums:
-                            category_sums[el_category] = 0
-                        category_sums[el_category] += el_value if not pd.isna(el_value) else 0
-                    
-                    answer_text = el_code_to_answer.get(question_code, "")
-                    category_summary[f"({question_code}) {answer_text}"] = category_sums
-            
-            # Create summary dataframe
-            if category_summary:
-                summary_rows = []
-                all_categories = set()
-                for col_data in category_summary.values():
-                    all_categories.update(col_data.keys())
-                
-                for category in sorted(all_categories):
-                    row_data = {"Category": category}
-                    for col_name in category_summary.keys():
-                        row_data[col_name] = category_summary[col_name].get(category, 0)
-                    summary_rows.append(row_data)
-                
-                summary_df = pd.DataFrame(summary_rows)
-                
-                # Add sorting controls for summary table
-                col1, col2 = st.columns([2, 1])
-                with col1:
-                    summary_sort_column = st.selectbox(
-                        "Sort summary by:",
-                        ["Category"] + list(category_summary.keys()),
-                        key="summary_sort_column"
-                    )
-                with col2:
-                    summary_sort_direction = st.radio(
-                        "Summary Direction:",
-                        ["Ascending", "Descending"],
-                        key="summary_sort_direction",
-                        horizontal=True
-                    )
-                
-                # Apply sorting to summary table
-                if summary_sort_column in summary_df.columns:
-                    if summary_sort_column == "Category":
-                        summary_df_sorted = summary_df.sort_values(
-                            by=summary_sort_column,
-                            ascending=(summary_sort_direction == "Ascending"),
-                            na_position='last'
-                        )
-                    else:
-                        # Numeric sorting for value columns
-                        summary_df_sorted = summary_df.sort_values(
-                            by=summary_sort_column,
-                            ascending=(summary_sort_direction == "Ascending"),
-                            na_position='last'
-                        )
-                else:
-                    summary_df_sorted = summary_df
-                
-                # Create styled HTML summary table
-                summary_html = """
-                <style>
-                .summary-table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    margin: 5px 0;
-                    font-size: 13px;
-                }
-                .summary-table th, .summary-table td {
-                    border: 1px solid #ddd;
-                    padding: 2px 8px;
-                    text-align: center;
-                }
-                .summary-table th {
-                    font-weight: bold;
-                    font-size: 11px;
-                    background-color: transparent;
-                }
-                .summary-table td:first-child {
-                    text-align: left;
-                    font-weight: bold;
-                }
-                </style>
-                <table class="summary-table">
-                """
-                
-                # Add header
-                summary_html += "<tr><th>Category</th>"
-                for col_name in category_summary.keys():
-                    summary_html += f"<th>{col_name}</th>"
-                summary_html += "</tr>"
-                
-                # Add data rows
-                for _, row in summary_df_sorted.iterrows():
-                    summary_html += "<tr>"
-                    summary_html += f"<td>{row['Category']}</td>"
-                    
-                    for col_name in category_summary.keys():
-                        value = row[col_name]
-                        # Apply conditional coloring for summary values
-                        color_class = ""
-                        if value < 0:
-                            color_class = "cell-red"
-                        elif 1 <= value <= 3:
-                            color_class = "cell-yellow"
-                        elif value > 3:
-                            color_class = "cell-green"
-                        else:
-                            color_class = "cell-gray"
-                        
-                        summary_html += f'<td class="{color_class}">{value:.0f}</td>'
-                    
-                    summary_html += "</tr>"
-                
-                summary_html += "</table>"
-                st.markdown(summary_html, unsafe_allow_html=True)
         
         # Add button for generating backend data cut for each selected EL question
         if selected_el_question_codes:
