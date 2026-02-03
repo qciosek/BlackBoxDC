@@ -685,17 +685,23 @@ def main():
                     # Add sorting controls for summary table
                     col1, col2 = st.columns([2, 1])
                     with col1:
+                        # Default to first selected question code
+                        summary_sort_options = ["Category"] + list(category_summary.keys())
+                        default_summary_sort = summary_sort_options[1] if len(summary_sort_options) > 1 else "Category"  # First question code
+                        default_summary_index = summary_sort_options.index(default_summary_sort) if default_summary_sort in summary_sort_options else 0
                         summary_sort_column = st.selectbox(
                             "Sort summary by:",
-                            ["Category"] + list(category_summary.keys()),
-                            key="summary_sort_column"
+                            summary_sort_options,
+                            key="summary_sort_column",
+                            index=default_summary_index
                         )
                     with col2:
                         summary_sort_direction = st.radio(
                             "Summary Direction:",
                             ["Ascending", "Descending"],
                             key="summary_sort_direction",
-                            horizontal=True
+                            horizontal=True,
+                            index=1  # Default to Descending
                         )
                     
                     # Apply sorting to summary table
