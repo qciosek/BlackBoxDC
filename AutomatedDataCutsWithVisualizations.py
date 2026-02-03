@@ -862,7 +862,19 @@ def main():
             table_html += f"<tr><th>EL</th><th>{el_question_header}</th>"
             for question_code in selected_el_question_codes:
                 answer_text = el_code_to_answer.get(question_code, "")
-                table_html += f"<th>({question_code}) {answer_text}</th>"
+                
+                # Get base size for this question_code
+                base_size_query = f"""
+                SELECT Base_Size
+                FROM {FE_responses_table}
+                WHERE question_code = %s
+                LIMIT 1
+                """
+                base_size_df = pd.read_sql(base_size_query, connection, params=[question_code])
+                base_size = base_size_df.iloc[0]['Base_Size'] if not base_size_df.empty and 'Base_Size' in base_size_df.columns else "N/A"
+                
+                # Create header with base size on new line
+                table_html += f"<th>({question_code}) {answer_text}<br><small>(n = {base_size})</small></th>"
             table_html += "</tr>"
             
             # Add data rows (sorted)
