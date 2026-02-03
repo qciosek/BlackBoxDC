@@ -564,6 +564,16 @@ def main():
                 score_label = "Olympian Engagement Score"
             elif dataset_option == "Shark Tank Study":
                 score_label = "Driven to Watch Shark Tank Score"
+            elif dataset_option == "Linear TV Study":
+                score_label = "TV Viewership Score"
+            elif dataset_option == "Morning Drive Study":
+                score_label = "Driven to Watch Morning Golf Show Score"
+            elif dataset_option == "Content Fandom Study":
+                score_label = "Content Engagement Score"
+            elif dataset_option == "Young People Study":
+                score_label = "Video Engagement Score"
+            elif dataset_option == "Drivers of Sports Fandom (new)":
+                score_label = "Sports Engagement Score"
             else:
                 score_label = "Cumulative Score"
             
