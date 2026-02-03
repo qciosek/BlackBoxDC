@@ -546,6 +546,7 @@ def main():
             .cell-red { background-color: #DA261F; color: white; font-weight: bold; }
             .cell-yellow { background-color: #DAC41F; color: black; font-weight: bold; }
             .cell-green { background-color: #1FDA2C; color: black; font-weight: bold; }
+            .cell-white { background-color: #FFFFFF; color: black; font-weight: bold; border: 1px solid #dee2e6; }
             </style>
             <div class="cumulative-container">
                 <table class="cumulative-table">
@@ -592,13 +593,40 @@ def main():
                 # Add constant to the sum
                 total_score = cumulative_sum + constant_value
                 
-                # Apply color coding based on total score
-                if total_score < 130:
-                    color_class = "cell-red"
-                elif 130 <= total_score <= 150:
-                    color_class = "cell-yellow"
-                else:  # total_score >= 151
-                    color_class = "cell-green"
+                # Get total sample baseline for comparison
+                # Look for the 'Total Sample' q_question_code specifically
+                baseline_query = f"""
+                SELECT *
+                FROM {FE_responses_table}
+                WHERE q_question_code = 'Total Sample'
+                LIMIT 1
+                """
+                baseline_df = pd.read_sql(baseline_query, connection)
+                
+                # Calculate total sample cumulative score
+                total_sample_score = 0
+                if not baseline_df.empty:
+                    # Use Total Sample row
+                    baseline_row = baseline_df.iloc[0]
+                    for _, el_row in el_mapping_df.iterrows():
+                        el_column = el_row["el_code"]
+                        if el_column in baseline_row:
+                            total_sample_score += baseline_row[el_column] if not pd.isna(baseline_row[el_column]) else 0
+                    total_sample_score += baseline_row.get('constant', 0) if not pd.isna(baseline_row.get('constant', 0)) else 0
+                else:
+                    # If no Total Sample found, show warning and use neutral baseline
+                    st.warning("No 'Total Sample' q_question_code found in FE_responses table. Color coding may not be accurate.")
+                    total_sample_score = total_score  # Fallback to current score
+                
+                # Apply color coding based on comparison to total sample
+                if abs(total_score - total_sample_score) < 0.1:  # Essentially equal (within 0.1)
+                    color_class = "cell-white"  # White for equal
+                elif total_score < total_sample_score:
+                    color_class = "cell-red"    # Red for below total sample
+                elif total_score <= total_sample_score * 1.2:  # Within 20% higher
+                    color_class = "cell-yellow" # Yellow for within 20% higher
+                else:  # Over 20% higher
+                    color_class = "cell-green"  # Green for over 20% higher
                 
                 cumulative_html += f'<td class="{color_class}">{total_score:.0f}</td>'
             
