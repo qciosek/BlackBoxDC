@@ -252,7 +252,19 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
     # Plot configuration
     num_metrics = sum([display_avg_yes, display_cut_percentage, display_index])
     bar_width = 0.7 / num_metrics
-    fig, ax = plt.subplots(figsize=(12, 8))
+    
+    # Dynamic figure size based on number of answers
+    num_answers = len(filtered_df)
+    if orientation == "Vertical":
+        # Width grows with number of answers, height stays reasonable
+        dynamic_width = max(8, min(20, 4 + num_answers * 0.8))
+        dynamic_height = 8
+    else:
+        # Height grows with number of answers for horizontal charts
+        dynamic_width = 12
+        dynamic_height = max(6, min(16, 3 + num_answers * 0.4))
+    
+    fig, ax = plt.subplots(figsize=(dynamic_width, dynamic_height))
     x_pos = range(len(filtered_df))
 
     y_max = 0
