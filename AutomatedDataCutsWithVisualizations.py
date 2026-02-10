@@ -591,6 +591,10 @@ def main():
                 score_label = "Video Engagement Score"
             elif dataset_option == "Drivers of Sports Fandom (new)":
                 score_label = "Sports Engagement Score"
+            elif dataset_option == "Linear TV Loglines 2 Study":
+                score_label = "Driven To Watch Loglines Score"
+            elif dataset_option == "Digital Content Logline Study":
+                score_label = "Driven To Watch Loglines Score"
             else:
                 score_label = "Cumulative Score"
             
