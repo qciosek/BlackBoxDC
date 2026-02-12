@@ -15,7 +15,7 @@ st.set_page_config(
 
 dataset_option = st.sidebar.selectbox(
     "Pick a dataset",
-    ["Sports Fandom Study", "Content Fandom Study", "Linear TV Study", "Young People Study", "Drivers of Sports Fandom (new)", "Shark Tank Study", "Female Focused Media Study", "Morning Drive Study", "Digital Content Logline Study", "Linear TV Loglines 2 Study"]
+    ["Sports Fandom Study", "Content Fandom Study", "Linear TV Study", "Young People Study", "Drivers of Sports Fandom (new)", "Shark Tank Study", "Female Focused Media Study", "Morning Drive Study", "Digital Content Logline Study", "Linear TV Loglines 2 Study", "Favorite Brands Connection Point Study"]
 )
 
 if dataset_option == "Sports Fandom Study":
@@ -63,6 +63,11 @@ elif dataset_option == "Linear TV Loglines 2 Study":
     question_mapping_table = "question_mapping_10"
     FE_responses_table = "FE_responses_10"
     FE_EL_mapping_table = "FE_EL_mapping_10"  
+elif dataset_option == "Favorite Brands Connection Point Study":
+    responses_table = "responses_11"
+    question_mapping_table = "question_mapping_11"
+    FE_responses_table = "FE_responses_11"
+    FE_EL_mapping_table = "FE_EL_mapping_11" 
 else:  # Test Dataset
     responses_table = "responses_3"
     question_mapping_table = "question_mapping_3"
@@ -600,6 +605,8 @@ def main():
                 score_label = "Driven To Watch Loglines Score"
             elif dataset_option == "Digital Content Logline Study":
                 score_label = "Driven To Watch Loglines Score"
+            elif dataset_option == "Favorite Brands Connection Point Study":
+                score_label = "Brand Engagement Score"
             else:
                 score_label = "Cumulative Score"
             
