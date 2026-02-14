@@ -15,7 +15,7 @@ st.set_page_config(
 
 dataset_option = st.sidebar.selectbox(
     "Pick a dataset",
-    ["Sports Fandom Study", "Content Fandom Study", "Linear TV Study", "Young People Study", "Drivers of Sports Fandom (new)", "Shark Tank Study", "Female Focused Media Study", "Morning Drive Study", "Digital Content Logline Study", "Linear TV Loglines 2 Study", "Favorite Brands Connection Point Study", "Favorite Brands Connection Point Study 2"]
+    ["Sports Fandom Study", "Content Fandom Study", "Linear TV Study", "Young People Study", "Drivers of Sports Fandom (new)", "Shark Tank Study", "Female Focused Media Study", "Morning Drive Study", "Digital Content Logline Study", "Linear TV Loglines 2 Study", "Favorite Brands Connection Point Study", "Favorite Brands (2) Connection Point Study", "TV Network Positioning Study"]
 )
 
 if dataset_option == "Sports Fandom Study":
@@ -68,11 +68,16 @@ elif dataset_option == "Favorite Brands Connection Point Study":
     question_mapping_table = "question_mapping_11"
     FE_responses_table = "FE_responses_11"
     FE_EL_mapping_table = "FE_EL_mapping_11" 
-elif dataset_option == "Favorite Brands Connection Point Study 2":
+elif dataset_option == "Favorite Brands 2 Connection Point Study":
     responses_table = "responses_12"
     question_mapping_table = "question_mapping_12"
     FE_responses_table = "FE_responses_12"
     FE_EL_mapping_table = "FE_EL_mapping_12" 
+elif dataset_option == "TV Network Positioning Study":
+    responses_table = "responses_13"
+    question_mapping_table = "question_mapping_13"
+    FE_responses_table = "FE_responses_13"
+    FE_EL_mapping_table = "FE_EL_mapping_13" 
 else:  # Test Dataset
     responses_table = "responses_3"
     question_mapping_table = "question_mapping_3"
@@ -612,8 +617,10 @@ def main():
                 score_label = "Driven To Watch Loglines Score"
             elif dataset_option == "Favorite Brands Connection Point Study":
                 score_label = "Brand Engagement Score"
-            elif dataset_option == "Favorite Brands Connection Point Study 2":
+            elif dataset_option == "Favorite Brands 2 Connection Point Study":
                 score_label = "Brand Engagement Score"
+            elif dataset_option == "TV Network Positioning Study":
+                score_label = "TV Viewership Score"
             else:
                 score_label = "Cumulative Score"
             
