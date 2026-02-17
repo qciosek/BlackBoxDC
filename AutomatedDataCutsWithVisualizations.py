@@ -593,7 +593,7 @@ def main():
             <div class="cumulative-container">
                 <table class="cumulative-table">
                     <tr>
-                        <th>Cumulative Score</th>
+                        <th></th>
             """
             
             for question_code in selected_el_question_codes:
