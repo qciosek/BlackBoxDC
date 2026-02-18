@@ -15,7 +15,12 @@ st.set_page_config(
 
 dataset_option = st.sidebar.selectbox(
     "Pick a dataset",
-    ["Sports Fandom Study", "Content Fandom Study", "Linear TV Study", "Young People Study", "Drivers of Sports Fandom (new)", "Shark Tank Study", "Female Focused Media Study", "Morning Drive Study", "Digital Content Logline Study", "Linear TV Loglines 2 Study", "Favorite Brands Connection Point Study", "Favorite Brands Connection Point Study 2", "TV Network Positioning Study", "Sports Steroids Study"]
+    ["Sports Fandom Study", "Content Fandom Study", "Linear TV Study", 
+    "Young People Study", "Drivers of Sports Fandom (new)", "Shark Tank Study", 
+    "Female Focused Media Study", "Morning Drive Study", "Digital Content Logline Study", 
+    "Linear TV Loglines 2 Study", "Favorite Brands Connection Point Study", 
+    "Favorite Brands Connection Point Study 2", "TV Network Positioning Study", 
+    "Sports Steroids Study", "Short Form Video Study"]
 )
 
 if dataset_option == "Sports Fandom Study":
@@ -23,71 +28,91 @@ if dataset_option == "Sports Fandom Study":
     question_mapping_table = "question_mapping_1"
     FE_responses_table = "FE_responses_1"
     FE_EL_mapping_table = "FE_EL_mapping_1"
+    score_label = "Olympian Engagement Score"
 elif dataset_option == "Content Fandom Study":
     responses_table = "responses_2"
     question_mapping_table = "question_mapping_2"
     FE_responses_table = "FE_responses_2"
     FE_EL_mapping_table = "FE_EL_mapping_2"
+    score_label = "Content Engagement Score"
 elif dataset_option == "Linear TV Study":
     responses_table = "responses_4"
     question_mapping_table = "question_mapping_4"
     FE_responses_table = "FE_responses_4"
     FE_EL_mapping_table = "FE_EL_mapping_4"
+    score_label = "TV Viewership Score"
 elif dataset_option == "Drivers of Sports Fandom (new)":
     responses_table = "responses_5"
     question_mapping_table = "question_mapping_5"
     FE_responses_table = "FE_responses_5"
     FE_EL_mapping_table = "FE_EL_mapping_5"
+    score_label = "Sports Engagement Score"
 elif dataset_option == "Shark Tank Study":
     responses_table = "responses_6"
     question_mapping_table = "question_mapping_6"
     FE_responses_table = "FE_responses_6"
     FE_EL_mapping_table = "FE_EL_mapping_6"
+    score_label = "Driven to Watch Shark Tank Score"
 elif dataset_option == "Female Focused Media Study":
     responses_table = "responses_7"
     question_mapping_table = "question_mapping_7"
     FE_responses_table = "FE_responses_7"
     FE_EL_mapping_table = "FE_EL_mapping_7"
+    score_label = "Cumulative Score"
 elif dataset_option == "Morning Drive Study":
     responses_table = "responses_8"
     question_mapping_table = "question_mapping_8"
     FE_responses_table = "FE_responses_8"
     FE_EL_mapping_table = "FE_EL_mapping_8"
+    score_label = "Driven to Watch Morning Golf Show Score"
 elif dataset_option == "Digital Content Logline Study":
     responses_table = "responses_9"
     question_mapping_table = "question_mapping_9"
     FE_responses_table = "FE_responses_9"
     FE_EL_mapping_table = "FE_EL_mapping_9"
+    score_label = "Driven To Watch Loglines Score"
 elif dataset_option == "Linear TV Loglines 2 Study":
     responses_table = "responses_10"
     question_mapping_table = "question_mapping_10"
     FE_responses_table = "FE_responses_10"
-    FE_EL_mapping_table = "FE_EL_mapping_10"  
+    FE_EL_mapping_table = "FE_EL_mapping_10"
+    score_label = "Driven To Watch Loglines Score"
 elif dataset_option == "Favorite Brands Connection Point Study":
     responses_table = "responses_11"
     question_mapping_table = "question_mapping_11"
     FE_responses_table = "FE_responses_11"
-    FE_EL_mapping_table = "FE_EL_mapping_11" 
+    FE_EL_mapping_table = "FE_EL_mapping_11"
+    score_label = "Brand Engagement Score"
 elif dataset_option == "Favorite Brands Connection Point Study 2":
     responses_table = "responses_12"
     question_mapping_table = "question_mapping_12"
     FE_responses_table = "FE_responses_12"
-    FE_EL_mapping_table = "FE_EL_mapping_12" 
+    FE_EL_mapping_table = "FE_EL_mapping_12"
+    score_label = "Brand Engagement Score"
 elif dataset_option == "TV Network Positioning Study":
     responses_table = "responses_13"
     question_mapping_table = "question_mapping_13"
     FE_responses_table = "FE_responses_13"
-    FE_EL_mapping_table = "FE_EL_mapping_13" 
+    FE_EL_mapping_table = "FE_EL_mapping_13"
+    score_label = "TV Viewership Score"
 elif dataset_option == "Sports Steroids Study":
     responses_table = "responses_14"
     question_mapping_table = "question_mapping_14"
     FE_responses_table = "FE_responses_14"
-    FE_EL_mapping_table = "FE_EL_mapping_14" 
+    FE_EL_mapping_table = "FE_EL_mapping_14"
+    score_label = "Athlete Engagement Score"
+elif dataset_option == "Short Form Video Study":
+    responses_table = "responses_15"
+    question_mapping_table = "question_mapping_15"
+    FE_responses_table = "FE_responses_15"
+    FE_EL_mapping_table = "FE_EL_mapping_15"
+    score_label = "Short Form Video Engagement Score"
 else:  # Test Dataset
     responses_table = "responses_3"
     question_mapping_table = "question_mapping_3"
     FE_responses_table = "FE_responses_3"
     FE_EL_mapping_table = "FE_EL_mapping_3"
+    score_label = "Cumulative Score"
 
 
 # Function to apply user-customized theme
@@ -600,36 +625,6 @@ def main():
                 answer_text = el_code_to_answer.get(question_code, "")
                 col_name = f"({question_code}) {answer_text}"
                 cumulative_html += f"<th>({question_code}) {answer_text}</th>"
-            
-            # Set the score label based on dataset
-            if dataset_option == "Sports Fandom Study":
-                score_label = "Olympian Engagement Score"
-            elif dataset_option == "Shark Tank Study":
-                score_label = "Driven to Watch Shark Tank Score"
-            elif dataset_option == "Linear TV Study":
-                score_label = "TV Viewership Score"
-            elif dataset_option == "Morning Drive Study":
-                score_label = "Driven to Watch Morning Golf Show Score"
-            elif dataset_option == "Content Fandom Study":
-                score_label = "Content Engagement Score"
-            elif dataset_option == "Young People Study":
-                score_label = "Video Engagement Score"
-            elif dataset_option == "Drivers of Sports Fandom (new)":
-                score_label = "Sports Engagement Score"
-            elif dataset_option == "Linear TV Loglines 2 Study":
-                score_label = "Driven To Watch Loglines Score"
-            elif dataset_option == "Digital Content Logline Study":
-                score_label = "Driven To Watch Loglines Score"
-            elif dataset_option == "Favorite Brands Connection Point Study":
-                score_label = "Brand Engagement Score"
-            elif dataset_option == "Favorite Brands Connection Point Study 2":
-                score_label = "Brand Engagement Score"
-            elif dataset_option == "TV Network Positioning Study":
-                score_label = "TV Viewership Score"
-            elif dataset_option == "Sports Steroids Study":
-                score_label = "Athlete Engagement Score"
-            else:
-                score_label = "Cumulative Score"
             
             cumulative_html += f"</tr><tr><td>{score_label}</td>"
             
