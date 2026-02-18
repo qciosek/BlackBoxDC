@@ -20,7 +20,7 @@ dataset_option = st.sidebar.selectbox(
     "Female Focused Media Study", "Morning Drive Study", "Digital Content Logline Study", 
     "Linear TV Loglines 2 Study", "Favorite Brands Connection Point Study", 
     "Favorite Brands Connection Point Study 2", "TV Network Positioning Study", 
-    "Sports Steroids Study", "Short Form Video Study"]
+    "Sports Steroids Study", "Short Form Video Study", "Media Affinity Study"]
 )
 
 if dataset_option == "Sports Fandom Study":
@@ -107,6 +107,12 @@ elif dataset_option == "Short Form Video Study":
     FE_responses_table = "FE_responses_15"
     FE_EL_mapping_table = "FE_EL_mapping_15"
     score_label = "Short Form Video Engagement Score"
+elif dataset_option == "Media Affinity Study":
+    responses_table = "responses_16"
+    question_mapping_table = "question_mapping_16"
+    FE_responses_table = "FE_responses_16"
+    FE_EL_mapping_table = "FE_EL_mapping_16"
+    score_label = "Media Engagement Score"
 else:  # Test Dataset
     responses_table = "responses_3"
     question_mapping_table = "question_mapping_3"
