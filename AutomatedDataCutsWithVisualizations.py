@@ -19,8 +19,9 @@ dataset_option = st.sidebar.selectbox(
     "Young People Study", "Drivers of Sports Fandom (new)", "Shark Tank Study", 
     "Female Focused Media Study", "Morning Drive Study", "Digital Content Logline Study", 
     "Linear TV Loglines 2 Study", "Favorite Brands Connection Point Study", 
-    "Favorite Brands (2) Connection Point Study", "TV Network Positioning Study", 
-    "Sports Steroids Study", "Short Form Video Study", "Media Affinity Study"]
+    "Favorite Brands Connection Point Study 2", "TV Network Positioning Study", 
+    "Sports Steroids Study", "Short Form Video Study", "Media Affinity Study", 
+    "Tribeca Film Festival Study"]
 )
 
 if dataset_option == "Sports Fandom Study":
@@ -83,7 +84,7 @@ elif dataset_option == "Favorite Brands Connection Point Study":
     FE_responses_table = "FE_responses_11"
     FE_EL_mapping_table = "FE_EL_mapping_11"
     score_label = "Brand Engagement Score"
-elif dataset_option == "Favorite Brands (2) Connection Point Study":
+elif dataset_option == "Favorite Brands Connection Point Study 2":
     responses_table = "responses_12"
     question_mapping_table = "question_mapping_12"
     FE_responses_table = "FE_responses_12"
@@ -113,6 +114,12 @@ elif dataset_option == "Media Affinity Study":
     FE_responses_table = "FE_responses_16"
     FE_EL_mapping_table = "FE_EL_mapping_16"
     score_label = "Media Engagement Score"
+elif dataset_option == "Tribeca Film Festival Study":
+    responses_table = "responses_17"
+    question_mapping_table = "question_mapping_17"
+    FE_responses_table = "FE_responses_17"
+    FE_EL_mapping_table = "FE_EL_mapping_17"
+    score_label = "TFF Engagement Score"
 else:  # Test Dataset
     responses_table = "responses_3"
     question_mapping_table = "question_mapping_3"
