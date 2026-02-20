@@ -19,7 +19,7 @@ dataset_option = st.sidebar.selectbox(
     "Young People Study", "Drivers of Sports Fandom (new)", "Shark Tank Study", 
     "Female Focused Media Study", "Morning Drive Study", "Digital Content Logline Study", 
     "Linear TV Loglines 2 Study", "Favorite Brands Connection Point Study", 
-    "Favorite Brands Connection Point Study 2", "TV Network Positioning Study", 
+    "Favorite Brands (2) Connection Point Study", "TV Network Positioning Study", 
     "Sports Steroids Study", "Short Form Video Study", "Media Affinity Study", 
     "Tribeca Film Festival Study", "Sports Engagement Study"]
 )
@@ -84,7 +84,7 @@ elif dataset_option == "Favorite Brands Connection Point Study":
     FE_responses_table = "FE_responses_11"
     FE_EL_mapping_table = "FE_EL_mapping_11"
     score_label = "Brand Engagement Score"
-elif dataset_option == "Favorite Brands Connection Point Study 2":
+elif dataset_option == "Favorite Brands (2) Connection Point Study":
     responses_table = "responses_12"
     question_mapping_table = "question_mapping_12"
     FE_responses_table = "FE_responses_12"
