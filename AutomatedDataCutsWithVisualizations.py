@@ -21,7 +21,7 @@ dataset_option = st.sidebar.selectbox(
     "Linear TV Loglines 2 Study", "Favorite Brands Connection Point Study", 
     "Favorite Brands (2) Connection Point Study", "TV Network Positioning Study", 
     "Sports Steroids Study", "Short Form Video Study", "Media Affinity Study", 
-    "Tribeca Film Festival Study", "Sports Engagement Study"]
+    "Tribeca Film Festival Study", "Sports Engagement Study", "Parenting Archetypes Study"]
 )
 
 if dataset_option == "Sports Fandom Study":
@@ -126,6 +126,12 @@ elif dataset_option == "Sports Engagement Study":
     FE_responses_table = "FE_responses_18"
     FE_EL_mapping_table = "FE_EL_mapping_18"
     score_label = "Sports Engagement Score"
+elif dataset_option == "Parenting Archetypes Study":
+    responses_table = "responses_19"
+    question_mapping_table = "question_mapping_19"
+    FE_responses_table = "FE_responses_19"
+    FE_EL_mapping_table = "FE_EL_mapping_19"
+    score_label = "Mom Engagement Score"
 else:  # Test Dataset
     responses_table = "responses_3"
     question_mapping_table = "question_mapping_3"
