@@ -13,9 +13,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-dataset_option = st.sidebar.selectbox(
-    "Pick a dataset",
-    ["Sports Fandom Study", "Content Fandom Study", "Linear TV Study", 
+dataset_options = ["Sports Fandom Study", "Content Fandom Study", "Linear TV Study", 
     "Young People Study", "Drivers of Sports Fandom (new)", "Shark Tank Study", 
     "Female Focused Media Study", "Morning Drive Study", "Digital Content Logline Study", 
     "Linear TV Loglines 2 Study", "Favorite Brands Connection Point Study", 
@@ -23,7 +21,26 @@ dataset_option = st.sidebar.selectbox(
     "Sports Steroids Study", "Short Form Video Study", "Media Affinity Study", 
     "Tribeca Film Festival Study", "Sports Engagement Study", "Parenting Archetypes Study",
     "Movie Logline Study"]
-)
+
+with st.sidebar.expander("Pick a dataset", expanded=False):
+    selected_options = []
+    for option in dataset_options:
+        if st.checkbox(option, key=f"dataset_{option}"):
+            selected_options.append(option)
+    
+    # Ensure only one option is selected
+    if len(selected_options) > 1:
+        st.warning("Please select only one dataset")
+        # Keep only the first selected option
+        dataset_option = selected_options[0]
+        # Uncheck others
+        for option in selected_options[1:]:
+            st.session_state[f"dataset_{option}"] = False
+    elif len(selected_options) == 1:
+        dataset_option = selected_options[0]
+    else:
+        # Default to first option if nothing is selected
+        dataset_option = dataset_options[0]
 
 if dataset_option == "Sports Fandom Study":
     responses_table = "responses_1"
