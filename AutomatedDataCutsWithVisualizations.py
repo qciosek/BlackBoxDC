@@ -21,7 +21,7 @@ dataset_option = st.sidebar.selectbox(
     "Linear TV Loglines 2 Study", "Favorite Brands Connection Point Study", 
     "Favorite Brands (2) Connection Point Study", "TV Network Positioning Study", 
     "Sports Steroids Study", "Short Form Video Study", "Media Affinity Study", 
-    "Tribeca Film Festival Study", "Sports Engagement Study", "Parenting Archetypes Study"
+    "Tribeca Film Festival Study", "Sports Engagement Study", "Parenting Archetypes Study",
     "Movie Logline Study"]
 )
 
