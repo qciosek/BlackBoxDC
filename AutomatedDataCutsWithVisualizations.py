@@ -1077,40 +1077,8 @@ def main():
                                         st.dataframe(subset[['answer_text', 'cutpercentage', 'index']].reset_index(drop=True),
                                                     height = 210
                                                     )
-                        # --- Select Metric ---
-                                metric_col, chart_col = st.columns(2)
-
-                                with metric_col:
-                                    st.markdown("**Select Metric**")
-                                    metric_cut = st.checkbox("Cut Percentage", value=True, key=f"backend_metric_cut_{q_code}_{question_code}")
-                                    metric_index = st.checkbox("Index", value=False, key=f"backend_metric_index_{q_code}_{question_code}")
-
-                                with chart_col:
-                                    st.markdown("**Select Chart**")
-                                    show_bar = st.checkbox("Bar Chart", key=f"backend_bar_{q_code}_{question_code}")
-                                    show_pie = st.checkbox("Pie Chart", key=f"backend_pie_{q_code}_{question_code}")
-                        # Determine selected metric (prioritize cut > avg > index)
-                                if metric_cut:
-                                    metric = 'cutpercentage_numeric'
-                                elif metric_index:
-                                    metric = 'index'
-                                else:
-                                    metric = 'cutpercentage_numeric'  # fallback
-
-                        # Render charts
-                                if show_bar:
-                                    fig, ax = plt.subplots(figsize=(4, 3))  # smaller figure
-                                    ax.barh(subset['answer_text'], subset[metric])
-                                    ax.set_title(f"{q_code} - {s_question_text}")
-                                    ax.set_xlabel(metric.replace("cutpercentage_numeric", "Cut Percentage").title())
-                                    ax.set_ylabel("Answers")
-                                    st.pyplot(fig)
-
-                                if show_pie:
-                                    fig, ax = plt.subplots(figsize=(3, 4))  # smaller figure
-                                    ax.pie(subset[metric], labels=subset['answer_text'], autopct="%1.1f%%")
-                                    ax.set_title(f"{q_code} - {s_question_text}")
-                                    st.pyplot(fig)
+        
+                                
 
                     # ---- CONTENT SECTION ----
                     content_df = df[df['question_code'].isin(
