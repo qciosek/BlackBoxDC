@@ -23,24 +23,12 @@ dataset_options = ["Sports Fandom Study", "Content Fandom Study", "Linear TV Stu
     "Movie Logline Study"]
 
 with st.sidebar.expander("Pick a dataset", expanded=False):
-    selected_options = []
-    for option in dataset_options:
-        if st.checkbox(option, key=f"dataset_{option}"):
-            selected_options.append(option)
-    
-    # Ensure only one option is selected
-    if len(selected_options) > 1:
-        st.warning("Please select only one dataset")
-        # Keep only the first selected option
-        dataset_option = selected_options[0]
-        # Uncheck others
-        for option in selected_options[1:]:
-            st.session_state[f"dataset_{option}"] = False
-    elif len(selected_options) == 1:
-        dataset_option = selected_options[0]
-    else:
-        # Default to first option if nothing is selected
-        dataset_option = dataset_options[0]
+    # Use radio buttons for single selection
+    dataset_option = st.radio(
+        "Select dataset:",
+        dataset_options,
+        key="dataset_radio_selection"
+    )
 
 if dataset_option == "Sports Fandom Study":
     responses_table = "responses_1"
