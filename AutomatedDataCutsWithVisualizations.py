@@ -13,14 +13,26 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-dataset_options = ["Sports Fandom Study", "Content Fandom Study", "Linear TV Study", 
-    "Young People Study", "Drivers of Sports Fandom (new)", "Shark Tank Study", 
-    "Female Focused Media Study", "Morning Drive Study", "Digital Content Logline Study", 
-    "Linear TV Loglines 2 Study", "Favorite Brands Connection Point Study", 
-    "Favorite Brands (2) Connection Point Study", "TV Network Positioning Study", 
-    "Sports Steroids Study", "Short Form Video Study", "Media Affinity Study", 
-    "Tribeca Film Festival Study", "Sports Engagement Study", "Parenting Archetypes Study",
-    "Movie Logline Study"]
+dataset_options = ["Sports Fandom Study", 
+                   "Drivers of Sports Fandom (new)", 
+                   "Sports Engagement Study",
+                   "Sports Steroids Study", 
+                   "Content Fandom Study", 
+                   "Digital Content Logline Study", 
+                   "Young People Study", 
+                   "Short Form Video Study", 
+                   "TV Network Positioning Study",
+                   "Linear TV Study", 
+                   "Linear TV Loglines 2 Study",
+                   "Morning Drive Study", 
+                   "Shark Tank Study", 
+                   "Female Focused Media Study", 
+                   "Tribeca Film Festival Study",
+                   "Movie Logline Study",
+                   "Favorite Brands (2) Connection Point Study",
+                   "Parenting Archetypes Study",
+                   "Favorite Brands Connection Point Study",   
+                   "Media Affinity Study"]
 
 with st.sidebar.expander("Pick a dataset", expanded=False):
     # Use radio buttons for single selection
@@ -65,7 +77,7 @@ elif dataset_option == "Female Focused Media Study":
     question_mapping_table = "question_mapping_7"
     FE_responses_table = "FE_responses_7"
     FE_EL_mapping_table = "FE_EL_mapping_7"
-    score_label = "Cumulative Score"
+    score_label = "Content Engagement Score"
 elif dataset_option == "Morning Drive Study":
     responses_table = "responses_8"
     question_mapping_table = "question_mapping_8"
@@ -291,16 +303,22 @@ def fetch_data_and_sample_size(connection, selected_questions):
 
 
 # Plot bar chart with editable labels
-def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, display_avg_yes, display_index, bar_color_cut, bar_color_yes, bar_color_index, orientation):
+def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, display_avg_yes, display_index, bar_color_cut, bar_color_yes, bar_color_index, orientation, chart_key_suffix=""):
     st.subheader("Edit Chart Labels and Title")
 
+    # Get s_question_text from the first row for the chart title
+    if not filtered_df.empty and 's_question_text' in filtered_df.columns:
+        s_question_text = filtered_df['s_question_text'].iloc[0]
+    else:
+        s_question_text = "Bar Chart Visualization"
+
     # Editable chart title
-    chart_title = st.text_input("Edit Bar Chart Title", value="Bar Chart Visualization")
+    chart_title = st.text_input("Edit Bar Chart Title", value=s_question_text, key=f"chart_title_{chart_key_suffix}")
 
     # Editable legend labels
-    legend_cut_percentage = st.text_input("Legend for Data Cut Percentages", value="Data Cut Percentages")
-    legend_avg_yes = st.text_input("Legend for Total Sample Percentages", value="Total Sample Percentages")
-    legend_index = st.text_input("Legend for Index", value="Index")
+    legend_cut_percentage = st.text_input("Legend for Data Cut Percentages", value="Data Cut Percentages", key=f"legend_cut_{chart_key_suffix}")
+    legend_avg_yes = st.text_input("Legend for Total Sample Percentages", value="Total Sample Percentages", key=f"legend_avg_{chart_key_suffix}")
+    legend_index = st.text_input("Legend for Index", value="Index", key=f"legend_index_{chart_key_suffix}")
 
     # Editable bar labels
     edited_labels = []
@@ -311,7 +329,7 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
             edited_label = st.text_input(
                 f"Edit label for '{row.answer_text}'", 
                 value=row.answer_text,
-                key=f"label_input_{i}"
+                key=f"label_input_{chart_key_suffix}_{i}"
             )
         edited_labels.append(edited_label)
 
@@ -413,6 +431,7 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
     ax.set_ylim(0, y_limit) if orientation == "Vertical" else ax.set_xlim(0, y_limit)
     ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.015), ncol=3)
     st.pyplot(fig)
+    plt.close(fig)
 
 import altair as alt
 
@@ -476,6 +495,8 @@ def plot_el_bar_chart_with_editable_labels(el_display_df, orientation):
 
 # Main function
 def main():
+    # Clear any existing matplotlib figures to prevent conflicts
+    plt.close('all')
     connection = connect_to_db()
     # ---- EL RESPONSES SECTION ----
 
@@ -1192,7 +1213,8 @@ def main():
                         bar_color_cut,
                         bar_color_yes,
                         bar_color_index,
-                        orientation
+                        orientation,
+                        chart_key_suffix=f"backend_{question_code}"
                     )
                 else:
                     st.write(f"Please select answers to display on the bar chart for {answer_text}.")
@@ -1463,12 +1485,14 @@ def main():
                                         ax.set_xlabel(metric.replace("cutpercentage_numeric", "Cut Percentage").title())
                                         ax.set_ylabel("Answers")
                                         st.pyplot(fig)
+                                        plt.close(fig)
 
                                     if show_pie:
                                         fig, ax = plt.subplots(figsize=(3, 4))  # smaller figure
                                         ax.pie(subset[metric], labels=subset['answer_text'], autopct="%1.1f%%")
                                         ax.set_title(f"{q_code} - {s_question_text}")
                                         st.pyplot(fig)
+                                        plt.close(fig)
 
 
 
@@ -1581,7 +1605,8 @@ def main():
                     bar_color_cut,
                     bar_color_yes,
                     bar_color_index,
-                    orientation
+                    orientation,
+                    chart_key_suffix="main"
                 )
             else:
                 st.write("Please select answers to display on the bar chart.")
