@@ -1072,7 +1072,9 @@ def main():
                                     s_question_text = subset['s_question_text'].iloc[0] if 's_question_text' in subset.columns else ""
                                     with col:
                                         st.write(f"**{q_code}: {s_question_text}**")
-                                        st.dataframe(subset[['answer_text', 'cutpercentage', 'index']].reset_index(drop=True),
+                                        df_to_display = subset[['answer_text', 'cutpercentage', 'index']].reset_index(drop=True)
+                                        df_to_display.index = df_to_display.index + 1
+                                        st.dataframe(df_to_display,
                                                     height = 210
                                                     )
         
@@ -1111,6 +1113,7 @@ def main():
                                     with col:
                                         st.write(f"**{q_code}: {s_question_text}**")
                                         df_to_display = subset[['answer_text', 'cutpercentage', 'index']].reset_index(drop=True)
+                                        df_to_display.index = df_to_display.index + 1
                                         st.dataframe(df_to_display)
 
                     # ---- BRANDS SECTION ----
@@ -1120,7 +1123,9 @@ def main():
                     if not brands_df.empty:
                         st.markdown("### 🏷️ Brands (Top 20)")
                         brands_top20 = brands_df.nlargest(20, 'index')
-                        st.dataframe(brands_top20[['q_question_code', 'answer_text', 'cutpercentage', 'index']].reset_index(drop=True))
+                        brands_display = brands_top20[['q_question_code', 'answer_text', 'cutpercentage', 'index']].reset_index(drop=True)
+                        brands_display.index = brands_display.index + 1
+                        st.dataframe(brands_display)
 
                 # Create dropdown labels for this data cut
                 df['dropdown_label'] = df['answer_text'] + ",   " + df['question_code'] + ",   " + df['question_text']
@@ -1430,7 +1435,9 @@ def main():
                                 s_question_text = subset['s_question_text'].iloc[0] if 's_question_text' in subset.columns else ""
                                 with col:
                                     st.write(f"**{q_code}: {s_question_text}**")
-                                    st.dataframe(subset[['answer_text', 'cutpercentage', 'index']].reset_index(drop=True),
+                                    df_to_display = subset[['answer_text', 'cutpercentage', 'index']].reset_index(drop=True)
+                                    df_to_display.index = df_to_display.index + 1
+                                    st.dataframe(df_to_display,
                                                 height = 210
                                                 )
                     # --- Select Metric ---
@@ -1505,6 +1512,7 @@ def main():
                                 with col:
                                     st.write(f"**{q_code}: {s_question_text}**")
                                     df_to_display = subset[['answer_text', 'cutpercentage', 'index']].reset_index(drop=True)
+                                    df_to_display.index = df_to_display.index + 1
                                     st.dataframe(df_to_display)
 
     # ---- BRANDS SECTION ----
@@ -1514,7 +1522,9 @@ def main():
                 if not brands_df.empty:
                     st.markdown("### 🏷️ Brands (Top 20)")
                     brands_top20 = brands_df.nlargest(20, 'index')
-                    st.dataframe(brands_top20[['q_question_code', 'answer_text', 'cutpercentage', 'index']].reset_index(drop=True))
+                    brands_display = brands_top20[['q_question_code', 'answer_text', 'cutpercentage', 'index']].reset_index(drop=True)
+                    brands_display.index = brands_display.index + 1
+                    st.dataframe(brands_display)
                     
             unique_q_question_codes = question_df_all[['q_question_code', 's_question_text']].drop_duplicates()
  
