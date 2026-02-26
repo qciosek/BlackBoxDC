@@ -1310,7 +1310,6 @@ def main():
         st.write("Please select at least one question code.")
 
     # Apply custom theme
-    apply_custom_theme()
 
     connection = connect_to_db()
 
