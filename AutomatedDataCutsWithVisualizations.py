@@ -161,7 +161,7 @@ else:  # Test Dataset
     question_mapping_table = "question_mapping_3"
     FE_responses_table = "FE_responses_3"
     FE_EL_mapping_table = "FE_EL_mapping_3"
-    score_label = "Cumulative Score"
+    score_label = "Video Engagement Score"
 
 
 
