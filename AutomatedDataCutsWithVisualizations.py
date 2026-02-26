@@ -164,29 +164,6 @@ else:  # Test Dataset
     score_label = "Cumulative Score"
 
 
-# Function to apply user-customized theme
-def apply_custom_theme():
-    background_color = st.sidebar.color_picker("Choose Background Color", "#f4f4f9")
-    text_color = st.sidebar.color_picker("Choose Text Color", "#000000")
-    button_color = st.sidebar.color_picker("Choose Button Color", "#ff7f0e")
-
-    st.markdown(f"""
-        <style>
-            body {{
-                background-color: {background_color};
-                color: {text_color};
-            }}
-            .stButton>button {{
-                background-color: {button_color};
-                color: white;
-                font-weight: bold;
-            }}
-            .css-1b7ki0p {{
-                background-color: {background_color};
-            }}
-        </style>
-    """, unsafe_allow_html=True)
-
 
 # Connect to the MySQL database
 def connect_to_db():
