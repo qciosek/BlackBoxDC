@@ -161,7 +161,7 @@ else:  # Test Dataset
     question_mapping_table = "question_mapping_3"
     FE_responses_table = "FE_responses_3"
     FE_EL_mapping_table = "FE_EL_mapping_3"
-    score_label = "Video Engagement Score"
+    score_label = "Cumulative Score"
 
 
 
@@ -523,12 +523,67 @@ def main():
     """
     question_df_all = pd.read_sql(question_query_all, connection)
 
+# Get unique q_question_codes from FE_responses table for auto-selection
+    el_q_question_codes_query = f"""
+    SELECT DISTINCT q_question_code, s_question_text
+    FROM {FE_responses_table}
+    WHERE q_question_code IS NOT NULL AND q_question_code != ''
+    ORDER BY q_question_code
+    """
+    el_q_question_codes_df = pd.read_sql(el_q_question_codes_query, connection)
+    
+    # Create mapping for q_question_code dropdown
+    el_q_question_code_mapping = {
+        f"{row.q_question_code} - {row.s_question_text}": row.q_question_code
+        for row in el_q_question_codes_df.itertuples()
+    }
+    
+    # Create dropdown options list
+    el_q_question_code_options = ["No Question Code"] + list(el_q_question_code_mapping.keys())
+    
+    # Select Question Codes for auto-selection
+    selected_el_q_question_codes_display = st.multiselect(
+        "Optional: Select Question Codes to Auto-Select Top 5 by Base Size:",
+        el_q_question_code_options,
+        key="el_q_codes_selection"
+    )
+    
+    # Convert selected display values back to actual q_question_code
+    selected_el_q_question_codes = [
+        el_q_question_code_mapping[option] for option in selected_el_q_question_codes_display if option != "No Question Code"
+    ]
+    
+    # Get base sizes for all EL question codes to determine top 5
+    base_sizes_query = f"""
+    SELECT question_code, answer_text, q_question_code, Base_Size
+    FROM {FE_responses_table}
+    WHERE Base_Size IS NOT NULL AND Base_Size > 0
+    ORDER BY Base_Size DESC
+    """
+    base_sizes_df = pd.read_sql(base_sizes_query, connection)
+    
+    # Auto-select top 5 answers by base size for each selected q_question_code
+    auto_selected_el_answers = []
+    if selected_el_q_question_codes:
+        for q_code in selected_el_q_question_codes:
+            # Get top 5 answers for this q_question_code by base size
+            top_5_for_q_code = base_sizes_df[
+                base_sizes_df['q_question_code'] == q_code
+            ].nlargest(5, 'Base_Size')
+            
+            # Create labels in the same format as el_dropdown_options
+            for _, row in top_5_for_q_code.iterrows():
+                label = f"{row['question_code']} {row['answer_text']}"
+                if label in el_label_to_code:  # Only add if it's a valid option
+                    auto_selected_el_answers.append(label)
+
 # Dropdown labels - allow multiple selection
     el_dropdown_options = ["Select a Question Code"] + list(el_label_to_code.keys())
 
     selected_labels = st.multiselect(
         "Front End Data: Select up to 5 question codes",
         el_dropdown_options,
+        default=auto_selected_el_answers,  # Auto-select top 5 by base size
         max_selections=5
     )
 
