@@ -543,7 +543,7 @@ def main():
     
     # Select Question Codes for auto-selection
     selected_el_q_question_codes_display = st.multiselect(
-        "Front End Data: Select Question to Auto-Select Answers",
+        "Front End Data: Select Question to Auto-Select Answers (max 5)",
         el_q_question_code_options,
         key="el_q_codes_selection"
     )
