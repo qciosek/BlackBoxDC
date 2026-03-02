@@ -184,9 +184,9 @@ connection = connect_to_db()
 
 with st.expander("📊 View Full Study (All Questions & Answers)"):
     query = f"""
-    SELECT q_question_code, s_question_text, answer_text, question_category
+    SELECT q_question_code, s_question_text, answer_text, question_category, question_order
     FROM {question_mapping_table}
-    ORDER BY q_question_code, answer_text
+    ORDER BY question_order, answer_text
     """
     study_df = pd.read_sql(query, connection)
     
@@ -261,16 +261,12 @@ def fetch_data_and_sample_size(connection, selected_questions):
             CASE 
                 WHEN aa.avg_yes_percentage = 0 THEN NULL
                 ELSE ROUND((cp.cutpercentage / aa.avg_yes_percentage) * 100)
-            END AS `index`
+            END AS `index`,
+            qm.question_order
         FROM cut_percentage cp
         JOIN average_answer aa ON cp.question_code = aa.question_code
         JOIN {question_mapping_table} qm ON cp.question_code = qm.question_code
-        ORDER BY 
-            CASE 
-                WHEN qm.q_question_code IN ('Q27', 'Q28', 'Q29', 'Q30', 'Q31', 'Q32', 'Q33', 'Q34', 'Q35', 'Q36', 'Q37', 'Q38', 'Q39') THEN `index`
-                ELSE CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(qm.question_code, 'Q', -1), '_', 1) AS UNSIGNED)
-            END DESC, 
-            qm.question_code;
+        ORDER BY qm.question_order, qm.answer_text;
         """
     else:
         query = "SELECT * FROM responses_1 WHERE 1=0"
@@ -517,9 +513,9 @@ def main():
 
     # Fetch question_df_all for dashboard categorization
     question_query_all = f"""
-    SELECT question_code, answer_text, question_text, q_question_code, s_question_text, question_category AS category
+    SELECT question_code, answer_text, question_text, q_question_code, s_question_text, question_category AS category, question_order
     FROM {question_mapping_table}
-    ORDER BY CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(question_code, 'Q', -1), '_', 1) AS UNSIGNED), question_code
+    ORDER BY question_order, answer_text
     """
     question_df_all = pd.read_sql(question_query_all, connection)
 
@@ -543,7 +539,7 @@ def main():
     
     # Select Question Codes for auto-selection
     selected_el_q_question_codes_display = st.multiselect(
-        "Front End Data: Select Question to Auto-Select Answers (max 5)",
+        "Front End Data: Select Question to Auto-Select Answers",
         el_q_question_code_options,
         key="el_q_codes_selection"
     )
@@ -718,6 +714,36 @@ def main():
             
             cumulative_html += f"</tr><tr><td>{score_label}</td>"
             
+            # Fetch all constants and baseline data once before the loop
+            constants_query = f"""
+            SELECT question_code, constant
+            FROM {FE_responses_table}
+            WHERE question_code IN ('{"', '".join(selected_el_question_codes)}')
+            """
+            constants_df = pd.read_sql(constants_query, connection)
+            constants_dict = dict(zip(constants_df['question_code'], constants_df['constant'])) if not constants_df.empty else {}
+            
+            # Get total sample baseline once
+            baseline_query = f"""
+            SELECT *
+            FROM {FE_responses_table}
+            WHERE q_question_code = 'Total Sample'
+            LIMIT 1
+            """
+            baseline_df = pd.read_sql(baseline_query, connection)
+            
+            # Calculate total sample score once
+            total_sample_score = 0
+            if not baseline_df.empty:
+                baseline_row = baseline_df.iloc[0]
+                for _, el_row in el_mapping_df.iterrows():
+                    el_column = el_row["el_code"]
+                    if el_column in baseline_row:
+                        total_sample_score += baseline_row[el_column] if not pd.isna(baseline_row[el_column]) else 0
+                total_sample_score += baseline_row.get('constant', 0) if not pd.isna(baseline_row.get('constant', 0)) else 0
+            else:
+                st.warning("No 'Total Sample' q_question_code found in FE_responses table. Color coding may not be accurate.")
+            
             for question_code in selected_el_question_codes:
                 answer_text = el_code_to_answer.get(question_code, "")
                 col_name = f"({question_code}) {answer_text}"
@@ -729,43 +755,11 @@ def main():
                     if not pd.isna(value):
                         cumulative_sum += value
                 
-                # Get the constant value from the FE_responses table for this question_code
-                constant_query = f"""
-                SELECT constant
-                FROM {FE_responses_table}
-                WHERE question_code = %s
-                LIMIT 1
-                """
-                constant_df = pd.read_sql(constant_query, connection, params=[question_code])
-                constant_value = constant_df.iloc[0]['constant'] if not constant_df.empty and 'constant' in constant_df.columns else 0
+                # Get constant value from pre-fetched data
+                constant_value = constants_dict.get(question_code, 0)
                 
                 # Add constant to the sum
                 total_score = cumulative_sum + constant_value
-                
-                # Get total sample baseline for comparison
-                # Look for the 'Total Sample' q_question_code specifically
-                baseline_query = f"""
-                SELECT *
-                FROM {FE_responses_table}
-                WHERE q_question_code = 'Total Sample'
-                LIMIT 1
-                """
-                baseline_df = pd.read_sql(baseline_query, connection)
-                
-                # Calculate total sample cumulative score
-                total_sample_score = 0
-                if not baseline_df.empty:
-                    # Use Total Sample row
-                    baseline_row = baseline_df.iloc[0]
-                    for _, el_row in el_mapping_df.iterrows():
-                        el_column = el_row["el_code"]
-                        if el_column in baseline_row:
-                            total_sample_score += baseline_row[el_column] if not pd.isna(baseline_row[el_column]) else 0
-                    total_sample_score += baseline_row.get('constant', 0) if not pd.isna(baseline_row.get('constant', 0)) else 0
-                else:
-                    # If no Total Sample found, show warning and use neutral baseline
-                    st.warning("No 'Total Sample' q_question_code found in FE_responses table. Color coding may not be accurate.")
-                    total_sample_score = total_score  # Fallback to current score
                 
                 # Apply color coding based on comparison to total sample
                 if abs(total_score - total_sample_score) < 0.1:  # Essentially equal (within 0.1)
@@ -1083,7 +1077,10 @@ def main():
                 st.markdown(f"### 📊 Data Cut - {question_code} - {answer_text}")
                 st.write(f"Sample Size = {sample_size}")
                 st.write("Data fetched from MySQL:")
-                st.dataframe(df)
+                # Hide question_order, cutpercentage_numeric, and avg_yes_percentage_numeric columns from user display but keep them for processing and CSV
+                columns_to_hide = ['question_order', 'cutpercentage_numeric', 'avg_yes_percentage_numeric']
+                display_df = df.drop(columns=[col for col in columns_to_hide if col in df.columns])
+                st.dataframe(display_df)
 
                 df['cutpercentage_numeric'] = df['cutpercentage'].str.replace('%', '').astype(float)
                 df['avg_yes_percentage_numeric'] = df['avg_yes_percentage'].str.replace('%', '').astype(float)
@@ -1182,9 +1179,6 @@ def main():
                         brands_display.index = brands_display.index + 1
                         st.dataframe(brands_display)
 
-                # Create dropdown labels for this data cut
-                df['dropdown_label'] = df['answer_text'] + ",   " + df['question_code'] + ",   " + df['question_text']
-                
                 # Get unique q_question_codes for selection (like original)
                 unique_q_question_codes = df[['q_question_code', 's_question_text']].drop_duplicates()
                 q_question_code_mapping = {
@@ -1209,16 +1203,16 @@ def main():
                 
                 # Auto-select answers based on selected q_question_codes
                 if selected_q_question_codes:
-                    auto_selected_answers = df[
-                        df['q_question_code'].isin(selected_q_question_codes)
-                    ]['dropdown_label'].tolist()
+                    filtered_df = df[df['q_question_code'].isin(selected_q_question_codes)]
+                    auto_selected_answers = (filtered_df['answer_text'] + ",   " + filtered_df['question_code'] + ",   " + filtered_df['question_text']).tolist()
                 else:
                     auto_selected_answers = []
                 
                 # Bar Chart Answer Selection (with auto-selected answers)
+                dropdown_labels = (df['answer_text'] + ",   " + df['question_code'] + ",   " + df['question_text']).tolist()
                 selected_answers = st.multiselect(
                     f"Select answers to display in the bar chart for {answer_text}:",
-                    df['dropdown_label'].tolist(),
+                    dropdown_labels,
                     default=auto_selected_answers,
                     key=f"backend_answers_{question_code}"
                 )
@@ -1236,8 +1230,10 @@ def main():
                 orientation = st.radio("Choose Chart Orientation", ["Vertical", "Horizontal"], index=1, key=f"backend_orient_{question_code}")
 
                 if selected_answers:
+                    # Create dropdown labels for comparison
+                    df_dropdown_labels = (df['answer_text'] + ",   " + df['question_code'] + ",   " + df['question_text'])
                     selected_question_codes = df[
-                        df['dropdown_label'].isin(selected_answers)
+                        df_dropdown_labels.isin(selected_answers)
                     ]['question_code'].tolist()
 
                     filtered_df = df[df['question_code'].isin(selected_question_codes)]
@@ -1375,8 +1371,8 @@ def main():
 
     # Fetch categories
     category_query = f"""
-    SELECT DISTINCT question_category FROM {question_mapping_table}
-    ORDER BY question_category
+    SELECT DISTINCT question_category, question_order FROM {question_mapping_table}
+    ORDER BY question_order, question_category
     """
     category_df = pd.read_sql(category_query, connection)
     categories = ["All Categories"] + category_df['question_category'].tolist()
@@ -1386,17 +1382,17 @@ def main():
 
     # Fetch question data based on the selected category
     question_query = f"""
-    SELECT question_code, answer_text, question_text, q_question_code
+    SELECT question_code, answer_text, question_text, q_question_code, question_order
     FROM {question_mapping_table}
     WHERE question_category LIKE '{selected_category}' OR '{selected_category}' = 'All Categories'
-    ORDER BY CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(question_code, 'Q', -1), '_', 1) AS UNSIGNED), question_code
+    ORDER BY question_order, answer_text
     """
     question_df = pd.read_sql(question_query, connection)
 
     question_query_all = f"""
-    SELECT question_code, answer_text, question_text, q_question_code, s_question_text, question_category AS category
+    SELECT question_code, answer_text, question_text, q_question_code, s_question_text, question_category AS category, question_order
     FROM {question_mapping_table}
-    ORDER BY CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(question_code, 'Q', -1), '_', 1) AS UNSIGNED), question_code
+    ORDER BY question_order, answer_text
     """
     question_df_all = pd.read_sql(question_query_all, connection)
 
@@ -1445,7 +1441,10 @@ def main():
 
         if not df.empty:
             st.write("Data fetched from MySQL:")
-            st.dataframe(df)
+            # Hide question_order, cutpercentage_numeric, and avg_yes_percentage_numeric columns from user display but keep them for processing and CSV
+            columns_to_hide = ['question_order', 'cutpercentage_numeric', 'avg_yes_percentage_numeric']
+            display_df = df.drop(columns=[col for col in columns_to_hide if col in df.columns])
+            st.dataframe(display_df)
 
             df['cutpercentage_numeric'] = df['cutpercentage'].str.replace('%', '').astype(float)
             df['avg_yes_percentage_numeric'] = df['avg_yes_percentage'].str.replace('%', '').astype(float)
