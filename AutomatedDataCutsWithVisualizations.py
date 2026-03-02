@@ -493,9 +493,10 @@ def main():
 # =========================
 
     el_question_codes_query = f"""
-    SELECT DISTINCT question_code, answer_text
-    FROM {FE_responses_table}
-    ORDER BY question_code
+    SELECT DISTINCT fr.question_code, fr.answer_text
+    FROM {FE_responses_table} fr
+    JOIN {question_mapping_table} qm ON fr.question_code = qm.question_code
+    ORDER BY qm.question_order, fr.answer_text
     """
     el_question_codes_df = pd.read_sql(el_question_codes_query, connection)
 
@@ -521,10 +522,11 @@ def main():
 
 # Get unique q_question_codes from FE_responses table for auto-selection
     el_q_question_codes_query = f"""
-    SELECT DISTINCT q_question_code, s_question_text
-    FROM {FE_responses_table}
-    WHERE q_question_code IS NOT NULL AND q_question_code != ''
-    ORDER BY q_question_code
+    SELECT DISTINCT fr.q_question_code, fr.s_question_text
+    FROM {FE_responses_table} fr
+    JOIN {question_mapping_table} qm ON fr.question_code = qm.question_code
+    WHERE fr.q_question_code IS NOT NULL AND fr.q_question_code != ''
+    ORDER BY qm.question_order, fr.q_question_code
     """
     el_q_question_codes_df = pd.read_sql(el_q_question_codes_query, connection)
     
