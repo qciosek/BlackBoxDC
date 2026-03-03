@@ -686,7 +686,7 @@ def main():
             .cumulative-table {
                 width: 100%;
                 border-collapse: collapse;
-                font-size: 18px;
+                font-size: 14px;
                 font-weight: bold;
             }
             .cumulative-table th, .cumulative-table td {
@@ -963,7 +963,7 @@ def main():
                 width: 100%;
                 border-collapse: collapse;
                 margin: 5px 0;
-                font-size: 13px;
+                font-size: 14px;
             }
             .comparison-table th, .comparison-table td {
                 border: 1px solid #ddd;
