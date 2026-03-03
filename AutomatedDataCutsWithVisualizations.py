@@ -864,7 +864,7 @@ def main():
                         width: 100%;
                         border-collapse: collapse;
                         margin: 5px 0;
-                        font-size: 18px;
+                        font-size: 13px;
                     }
                     .summary-table th, .summary-table td {
                         border: 1px solid #ddd;
@@ -963,7 +963,7 @@ def main():
                 width: 100%;
                 border-collapse: collapse;
                 margin: 5px 0;
-                font-size: 14px;
+                font-size: 13px;
             }
             .comparison-table th, .comparison-table td {
                 border: 1px solid #ddd;
@@ -1112,24 +1112,38 @@ def main():
                 st.markdown("### 📈 Create Custom Index")
                 st.write("Select an answer to create a custom index:")
                 
-                # Get all questions for dropdown
-                index_query = f"""
-                SELECT question_code, answer_text
-                FROM {question_mapping_table}
-                ORDER BY question_order, answer_text
-                """
-                index_options_df = pd.read_sql(index_query, connection)
-                
-                # Create dropdown labels
-                index_options = ["Select an answer to index by"] + [
-                    f"{row.question_code} - {row.answer_text}" for _, row in index_options_df.iterrows()
-                ]
-                
-                selected_index_answer = st.selectbox(
-                    "Select answer for custom index:",
-                    index_options,
-                    key=f"custom_index_{question_code}"
-                )
+                try:
+                    # Test database connection first
+                    st.write("DEBUG: Testing database connection...")
+                    test_query = "SELECT 1 as test"
+                    test_result = pd.read_sql(test_query, connection)
+                    st.write("DEBUG: Database connection successful")
+                    
+                    # Get all questions for dropdown
+                    index_query = f"""
+                    SELECT question_code, answer_text
+                    FROM {question_mapping_table}
+                    ORDER BY question_order, answer_text
+                    """
+                    st.write(f"DEBUG: Querying table: {question_mapping_table}")
+                    index_options_df = pd.read_sql(index_query, connection)
+                    st.write(f"DEBUG: Found {len(index_options_df)} options for dropdown")
+                    
+                    # Create dropdown labels
+                    index_options = ["Select an answer to index by"] + [
+                        f"{row.question_code} - {row.answer_text}" for _, row in index_options_df.iterrows()
+                    ]
+                    
+                    selected_index_answer = st.selectbox(
+                        "Select answer for custom index:",
+                        index_options,
+                        key=f"custom_index_{question_code}"
+                    )
+                    
+                except Exception as e:
+                    st.error(f"DEBUG: Error in custom index setup: {str(e)}")
+                    st.write(f"DEBUG: Connection type: {type(connection)}")
+                    st.write(f"DEBUG: Table name: {question_mapping_table}")
                 
                 if selected_index_answer != "Select an answer to index by":
                     selected_question_code = selected_index_answer.split(" - ")[0]
