@@ -963,7 +963,7 @@ def main():
                 width: 100%;
                 border-collapse: collapse;
                 margin: 5px 0;
-                font-size: 13px;
+                font-size: 15px;
             }
             .comparison-table th, .comparison-table td {
                 border: 1px solid #ddd;
