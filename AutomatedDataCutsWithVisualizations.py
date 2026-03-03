@@ -1113,21 +1113,13 @@ def main():
                 st.write("Select an answer to create a custom index:")
                 
                 try:
-                    # Test database connection first
-                    st.write("DEBUG: Testing database connection...")
-                    test_query = "SELECT 1 as test"
-                    test_result = pd.read_sql(test_query, connection)
-                    st.write("DEBUG: Database connection successful")
-                    
                     # Get all questions for dropdown
                     index_query = f"""
                     SELECT question_code, answer_text
                     FROM {question_mapping_table}
                     ORDER BY question_order, answer_text
                     """
-                    st.write(f"DEBUG: Querying table: {question_mapping_table}")
                     index_options_df = pd.read_sql(index_query, connection)
-                    st.write(f"DEBUG: Found {len(index_options_df)} options for dropdown")
                     
                     # Create dropdown labels
                     index_options = ["Select an answer to index by"] + [
@@ -1139,11 +1131,6 @@ def main():
                         index_options,
                         key=f"custom_index_{question_code}"
                     )
-                    
-                except Exception as e:
-                    st.error(f"DEBUG: Error in custom index setup: {str(e)}")
-                    st.write(f"DEBUG: Connection type: {type(connection)}")
-                    st.write(f"DEBUG: Table name: {question_mapping_table}")
                 
                 if selected_index_answer != "Select an answer to index by":
                     selected_question_code = selected_index_answer.split(" - ")[0]
