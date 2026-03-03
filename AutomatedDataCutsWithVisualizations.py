@@ -963,7 +963,7 @@ def main():
                 width: 100%;
                 border-collapse: collapse;
                 margin: 5px 0;
-                font-size: 15px;
+                font-size: 13px;
             }
             .comparison-table th, .comparison-table td {
                 border: 1px solid #ddd;
@@ -1110,7 +1110,7 @@ def main():
                 
                 # ---- Custom Index Feature ----
                 st.markdown("### 📈 Create Custom Index")
-                st.write("Select an answer to create a custom index:")
+                st.write("Select up to 10 answers to create custom indexes:")
                 
                 try:
                     # Get all questions for dropdown
@@ -1122,90 +1122,119 @@ def main():
                     index_options_df = pd.read_sql(index_query, connection)
                     
                     # Create dropdown labels
-                    index_options = ["Select an answer to index by"] + [
+                    index_options = [
                         f"{row.question_code} - {row.answer_text}" for _, row in index_options_df.iterrows()
                     ]
                     
-                    selected_index_answer = st.selectbox(
-                        "Select answer for custom index:",
+                    # Initialize session state for selected indexes
+                    if f'selected_indexes_{question_code}' not in st.session_state:
+                        st.session_state[f'selected_indexes_{question_code}'] = []
+                    
+                    selected_index_answers = st.multiselect(
+                        "Select answers for custom indexes:",
                         index_options,
-                        key=f"custom_index_{question_code}"
+                        default=st.session_state[f'selected_indexes_{question_code}'],
+                        key=f"multiselect_custom_index_{question_code}",
+                        max_selections=10
                     )
                     
-                    if selected_index_answer != "Select an answer to index by":
-                        selected_question_code = selected_index_answer.split(" - ")[0]
-                        
-                        with st.spinner("Calculating custom index..."):
-                            try:
-                                # Hidden data cut to get cutpercentageCI
-                                index_cut_query = f"""
-                                WITH index_participants AS (
-                                    SELECT DISTINCT participant_id
-                                        FROM {responses_table}
-                                        WHERE LOWER(response_text) = 'yes'
-                                        AND question_code = '{selected_question_code}'
-                                ),
-                                cut_percentages AS (
-                                    SELECT 
-                                        r.question_code,
-                                            COUNT(CASE WHEN LOWER(r.response_text) = 'yes' THEN 1 END) * 100.0 / 
-                                            COUNT(CASE WHEN LOWER(r.response_text) IN ('yes', 'no') THEN 1 END) AS cutpercentageCI
-                                        FROM index_participants ip
-                                        JOIN {responses_table} r ON ip.participant_id = r.participant_id
-                                        WHERE LOWER(r.response_text) IN ('yes', 'no')
-                                        GROUP BY r.question_code
-                                )
-                                SELECT question_code, cutpercentageCI
-                                FROM cut_percentages
-                                """
+                    # Update session state
+                    st.session_state[f'selected_indexes_{question_code}'] = selected_index_answers
+                    
+                    # Force recalculation by checking if selections changed
+                    previous_selections = st.session_state.get(f'previous_selections_{question_code}', [])
+                    selections_changed = set(selected_index_answers) != set(previous_selections)
+                    st.session_state[f'previous_selections_{question_code}'] = selected_index_answers.copy()
+                    
+                    # Remove indexes for deselected answers
+                    current_index_cols = [col for col in df.columns if col.startswith('index (')]
+                    for col in current_index_cols:
+                        # Extract the answer part from column name
+                        if ' - ' in col:
+                            col_answer = col.split(' - ')[1].replace(')', '')
+                            # Check if this answer is still selected
+                            is_still_selected = False
+                            for selected in selected_index_answers:
+                                if ' - ' in selected:
+                                    selected_answer = selected.split(' - ')[1]
+                                    if selected_answer == col_answer:
+                                        is_still_selected = True
+                                        break
+                            if not is_still_selected:
+                                df.drop(columns=[col], inplace=True)
+                    
+                    # Add indexes for newly selected answers
+                    if selected_index_answers:
+                        with st.spinner("Calculating custom indexes..."):
+                            for selected_index_answer in selected_index_answers:
+                                selected_question_code = selected_index_answer.split(" - ")[0]
+                                index_col_name = f'index ({selected_question_code}, {selected_index_answer.split(" - ")[1]})'
                                 
-                                index_cut_df = pd.read_sql(index_cut_query, connection)
+                                # Skip if this index already exists
+                                if index_col_name in df.columns:
+                                    continue
                                 
-                                if not index_cut_df.empty:
-                                    # Create mapping
-                                    ci_dict = dict(zip(index_cut_df['question_code'], index_cut_df['cutpercentageCI']))
+                                try:
+                                    # Hidden data cut to get cutpercentageCI
+                                    index_cut_query = f"""
+                                    WITH index_participants AS (
+                                        SELECT DISTINCT participant_id
+                                            FROM {responses_table}
+                                            WHERE LOWER(response_text) = 'yes'
+                                            AND question_code = '{selected_question_code}'
+                                    ),
+                                    cut_percentages AS (
+                                        SELECT 
+                                            r.question_code,
+                                                COUNT(CASE WHEN LOWER(r.response_text) = 'yes' THEN 1 END) * 100.0 / 
+                                                COUNT(CASE WHEN LOWER(r.response_text) IN ('yes', 'no') THEN 1 END) AS cutpercentageCI
+                                            FROM index_participants ip
+                                            JOIN {responses_table} r ON ip.participant_id = r.participant_id
+                                            WHERE LOWER(r.response_text) IN ('yes', 'no')
+                                            GROUP BY r.question_code
+                                    )
+                                    SELECT question_code, cutpercentageCI
+                                    FROM cut_percentages
+                                    """
                                     
-                                    # Create new index column
-                                    index_col_name = f'index ({selected_question_code}, {selected_index_answer.split(" - ")[1]})'
-                                    df[index_col_name] = None
+                                    index_cut_df = pd.read_sql(index_cut_query, connection)
                                     
-                                    # Calculate index for each row
-                                    for idx, row in df.iterrows():
-                                        q_code = row['question_code']
-                                        cut_pct = row['cutpercentage_numeric']
+                                    if not index_cut_df.empty:
+                                        # Create mapping
+                                        ci_dict = dict(zip(index_cut_df['question_code'], index_cut_df['cutpercentageCI']))
                                         
-                                        if q_code in ci_dict and ci_dict[q_code] > 0:
-                                            df.at[idx, index_col_name] = (cut_pct / ci_dict[q_code]) * 100
-                                    
-                                    # Ensure selected answer is exactly 100
-                                    if selected_question_code in ci_dict:
-                                        df.loc[df['question_code'] == selected_question_code, index_col_name] = 100.0
-                                        base_ci = ci_dict[selected_question_code]
-                                    else:
-                                        base_ci = 0
-                                    
-                                    st.success(f"✅ Custom index created using {selected_index_answer}")
-                                    st.write(f"Index baseline: {base_ci:.1f}%")
-                                    
-                                    # Display updated dataframe
-                                    st.write("Updated data with custom index:")
-                                    columns_to_hide = ['question_order', 'cutpercentage_numeric', 'avg_yes_percentage_numeric']
-                                    display_df = df.drop(columns=[col for col in columns_to_hide if col in df.columns]).copy()
-                                    
-                                    # Format index column as whole numbers
-                                    if index_col_name in display_df.columns:
-                                        # Remove all decimal places from display
-                                        display_df[index_col_name] = display_df[index_col_name].round().astype('object')
-                                        # Convert to string to ensure no decimal places show
-                                        display_df[index_col_name] = display_df[index_col_name].apply(lambda x: f"{int(x)}" if pd.notna(x) else "")
-                                    
-                                    st.dataframe(display_df)
-                                    
-                                else:
-                                    st.warning(f"No data found for {selected_index_answer}")
-                                    
-                            except Exception as e:
-                                st.error(f"Error: {str(e)}")
+                                        # Create new index column
+                                        df[index_col_name] = None
+                                        
+                                        # Calculate index for each row
+                                        for idx, row in df.iterrows():
+                                            q_code = row['question_code']
+                                            cut_pct = row['cutpercentage_numeric']
+                                            
+                                            if q_code in ci_dict and ci_dict[q_code] > 0:
+                                                df.at[idx, index_col_name] = (cut_pct / ci_dict[q_code]) * 100
+                                        
+                                        # Ensure selected answer is exactly 100
+                                        if selected_question_code in ci_dict:
+                                            df.loc[df['question_code'] == selected_question_code, index_col_name] = 100.0
+                                        
+                                except Exception as e:
+                                    st.error(f"Error calculating index for {selected_index_answer}: {str(e)}")
+                        
+                        st.success(f"✅ Created {len(selected_index_answers)} custom index(es)")
+                        
+                        # Display updated dataframe
+                        st.write("Updated data with custom indexes:")
+                        columns_to_hide = ['question_order', 'cutpercentage_numeric', 'avg_yes_percentage_numeric']
+                        display_df = df.drop(columns=[col for col in columns_to_hide if col in df.columns]).copy()
+                        
+                        # Format all index columns as whole numbers
+                        for col in display_df.columns:
+                            if col.startswith('index ('):
+                                display_df[col] = display_df[col].round().astype('object')
+                                display_df[col] = display_df[col].apply(lambda x: f"{int(x)}" if pd.notna(x) else "")
+                        
+                        st.dataframe(display_df)
                                 
                 except Exception as e:
                     st.error(f"Error in custom index setup: {str(e)}")
@@ -1572,6 +1601,137 @@ def main():
                 file_name="exported_data.csv",
                 mime="text/csv"
             )
+            
+            # ---- Custom Index Feature ----
+            st.markdown("### 📈 Create Custom Index")
+            st.write("Select up to 10 answers to create custom indexes:")
+            
+            try:
+                # Get all questions for dropdown
+                index_query = f"""
+                SELECT question_code, answer_text
+                FROM {question_mapping_table}
+                ORDER BY question_order, answer_text
+                """
+                index_options_df = pd.read_sql(index_query, connection)
+                
+                # Create dropdown labels
+                index_options = [
+                    f"{row.question_code} - {row.answer_text}" for _, row in index_options_df.iterrows()
+                ]
+                
+                # Initialize session state for selected indexes
+                if 'main_selected_indexes' not in st.session_state:
+                    st.session_state['main_selected_indexes'] = []
+                
+                selected_index_answers = st.multiselect(
+                    "Select answers for custom indexes:",
+                    index_options,
+                    default=st.session_state['main_selected_indexes'],
+                    key="main_multiselect_custom_index",
+                    max_selections=10
+                )
+                
+                # Update session state
+                st.session_state['main_selected_indexes'] = selected_index_answers
+                
+                # Force recalculation by checking if selections changed
+                previous_selections = st.session_state.get('main_previous_selections', [])
+                selections_changed = set(selected_index_answers) != set(previous_selections)
+                st.session_state['main_previous_selections'] = selected_index_answers.copy()
+                
+                # Remove indexes for deselected answers
+                current_index_cols = [col for col in df.columns if col.startswith('index (')]
+                for col in current_index_cols:
+                    # Extract the answer part from column name
+                    if ' - ' in col:
+                        col_answer = col.split(' - ')[1].replace(')', '')
+                        # Check if this answer is still selected
+                        is_still_selected = False
+                        for selected in selected_index_answers:
+                            if ' - ' in selected:
+                                selected_answer = selected.split(' - ')[1]
+                                if selected_answer == col_answer:
+                                    is_still_selected = True
+                                    break
+                        if not is_still_selected:
+                            df.drop(columns=[col], inplace=True)
+                
+                # Add indexes for newly selected answers
+                if selected_index_answers:
+                    with st.spinner("Calculating custom indexes..."):
+                        for selected_index_answer in selected_index_answers:
+                            selected_question_code = selected_index_answer.split(" - ")[0]
+                            index_col_name = f'index ({selected_question_code}, {selected_index_answer.split(" - ")[1]})'
+                            
+                            # Skip if this index already exists
+                            if index_col_name in df.columns:
+                                continue
+                            
+                            try:
+                                # Hidden data cut to get cutpercentageCI
+                                index_cut_query = f"""
+                                WITH index_participants AS (
+                                    SELECT DISTINCT participant_id
+                                        FROM {responses_table}
+                                        WHERE LOWER(response_text) = 'yes'
+                                        AND question_code = '{selected_question_code}'
+                                ),
+                                cut_percentages AS (
+                                    SELECT 
+                                        r.question_code,
+                                            COUNT(CASE WHEN LOWER(r.response_text) = 'yes' THEN 1 END) * 100.0 / 
+                                            COUNT(CASE WHEN LOWER(r.response_text) IN ('yes', 'no') THEN 1 END) AS cutpercentageCI
+                                        FROM index_participants ip
+                                        JOIN {responses_table} r ON ip.participant_id = r.participant_id
+                                        WHERE LOWER(r.response_text) IN ('yes', 'no')
+                                        GROUP BY r.question_code
+                                )
+                                SELECT question_code, cutpercentageCI
+                                FROM cut_percentages
+                                """
+                                
+                                index_cut_df = pd.read_sql(index_cut_query, connection)
+                                
+                                if not index_cut_df.empty:
+                                    # Create mapping
+                                    ci_dict = dict(zip(index_cut_df['question_code'], index_cut_df['cutpercentageCI']))
+                                    
+                                    # Create new index column
+                                    df[index_col_name] = None
+                                    
+                                    # Calculate index for each row
+                                    for idx, row in df.iterrows():
+                                        q_code = row['question_code']
+                                        cut_pct = row['cutpercentage_numeric']
+                                        
+                                        if q_code in ci_dict and ci_dict[q_code] > 0:
+                                            df.at[idx, index_col_name] = (cut_pct / ci_dict[q_code]) * 100
+                                    
+                                    # Ensure selected answer is exactly 100
+                                    if selected_question_code in ci_dict:
+                                        df.loc[df['question_code'] == selected_question_code, index_col_name] = 100.0
+                                    
+                            except Exception as e:
+                                st.error(f"Error calculating index for {selected_index_answer}: {str(e)}")
+                    
+                    st.success(f"✅ Created {len(selected_index_answers)} custom index(es)")
+                    
+                    # Display updated dataframe
+                    st.write("Updated data with custom indexes:")
+                    columns_to_hide = ['question_order', 'cutpercentage_numeric', 'avg_yes_percentage_numeric']
+                    display_df = df.drop(columns=[col for col in columns_to_hide if col in df.columns]).copy()
+                    
+                    # Format all index columns as whole numbers
+                    for col in display_df.columns:
+                        if col.startswith('index ('):
+                            display_df[col] = display_df[col].round().astype('object')
+                            display_df[col] = display_df[col].apply(lambda x: f"{int(x)}" if pd.notna(x) else "")
+                    
+                    st.dataframe(display_df)
+                        
+            except Exception as e:
+                st.error(f"Error in custom index setup: {str(e)}")
              
             # ---- Generate Dashboard Button ----
             
