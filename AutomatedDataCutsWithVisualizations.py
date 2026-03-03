@@ -864,7 +864,7 @@ def main():
                         width: 100%;
                         border-collapse: collapse;
                         margin: 5px 0;
-                        font-size: 13px;
+                        font-size: 18px;
                     }
                     .summary-table th, .summary-table td {
                         border: 1px solid #ddd;
