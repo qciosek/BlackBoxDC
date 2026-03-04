@@ -276,7 +276,7 @@ def fetch_data_and_sample_size(connection, selected_questions):
 
 
 # Plot bar chart with editable labels
-def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, display_avg_yes, display_index, bar_color_cut, bar_color_yes, bar_color_index, orientation, chart_key_suffix=""):
+def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, display_avg_yes, display_index, bar_color_cut, bar_color_yes, bar_color_index, orientation, custom_index_displays=None, custom_index_colors=None, chart_key_suffix=""):
     st.subheader("Edit Chart Labels and Title")
 
     # Get s_question_text from the first row for the chart title
@@ -292,6 +292,15 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
     legend_cut_percentage = st.text_input("Legend for Data Cut Percentages", value="Data Cut Percentages", key=f"legend_cut_{chart_key_suffix}")
     legend_avg_yes = st.text_input("Legend for Total Sample Percentages", value="Total Sample Percentages", key=f"legend_avg_{chart_key_suffix}")
     legend_index = st.text_input("Legend for Index", value="Index", key=f"legend_index_{chart_key_suffix}")
+    
+    # Add custom index legend inputs
+    custom_index_legends = {}
+    if custom_index_displays:
+        for col, display in custom_index_displays.items():
+            if display and ' - ' in col:
+                col_name = col.replace('index (', '').replace(')', '')
+                legend_key = f"legend_custom_{col.replace('index (', '').replace(')', '').replace(' ', '_').replace('-', '_')}_{chart_key_suffix}"
+                custom_index_legends[col] = st.text_input(f"Legend for {col_name}", value=col_name, key=legend_key)
 
     # Editable bar labels
     edited_labels = []
@@ -322,6 +331,12 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
         sort_column = 'avg_yes_percentage_numeric'
     elif display_index:
         sort_column = 'index'
+    elif custom_index_displays:
+        # Use first selected custom index for sorting
+        for col, display in custom_index_displays.items():
+            if display and col in filtered_df.columns:
+                sort_column = col
+                break
     if not sort_column:
         sort_column = 'avg_yes_percentage_numeric'
     
@@ -329,7 +344,9 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
 
     # Plot configuration
     num_metrics = sum([display_avg_yes, display_cut_percentage, display_index])
-    bar_width = 0.7 / num_metrics
+    if custom_index_displays:
+        num_metrics += sum(custom_index_displays.values())
+    bar_width = 0.7 / num_metrics if num_metrics > 0 else 0.7
     
     # Dynamic figure size based on number of answers
     num_answers = len(filtered_df)
@@ -352,11 +369,17 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
         y_max = max(y_max, filtered_df['avg_yes_percentage_numeric'].max())
     if display_index:
         y_max = max(y_max, filtered_df['index'].max())
+    if custom_index_displays:
+        for col, display in custom_index_displays.items():
+            if display and col in filtered_df.columns:
+                y_max = max(y_max, filtered_df[col].max())
 
     y_limit = min(500, max(60, y_max + 15))
 
     if orientation == "Vertical":
         bar_shift = -bar_width * (num_metrics // 2)
+        
+        # Standard metrics
         for metric, display, color, label in [
             ("cutpercentage_numeric", display_cut_percentage, bar_color_cut, legend_cut_percentage),
             ("avg_yes_percentage_numeric", display_avg_yes, bar_color_yes, legend_avg_yes),
@@ -373,6 +396,23 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
                 for i, v in enumerate(filtered_df[metric]):
                     ax.text(i + bar_shift, v + 1, f"{v:.0f}%" if metric != "index" else f"{v:.0f}", ha="center", fontsize=9)
                 bar_shift += bar_width
+        
+        # Custom indexes
+        if custom_index_displays:
+            for col, display in custom_index_displays.items():
+                if display and col in filtered_df.columns:
+                    color = custom_index_colors.get(col, "#FF6B6B")
+                    label = custom_index_legends.get(col, col.replace('index (', '').replace(')', ''))
+                    ax.bar(
+                        [pos + bar_shift for pos in x_pos],
+                        filtered_df[col],
+                        width=bar_width,
+                        label=label,
+                        color=color,
+                    )
+                    for i, v in enumerate(filtered_df[col]):
+                        ax.text(i + bar_shift, v + 1, f"{v:.0f}", ha="center", fontsize=9)
+                    bar_shift += bar_width
 
         ax.set_ylabel(" ")
         ax.set_title(chart_title, fontweight='bold')
@@ -380,6 +420,8 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
         ax.set_yticks([])
     else:
         bar_shift = -bar_width * (num_metrics // 2)
+        
+        # Standard metrics
         for metric, display, color, label in [
             ("cutpercentage_numeric", display_cut_percentage, bar_color_cut, legend_cut_percentage),
             ("avg_yes_percentage_numeric", display_avg_yes, bar_color_yes, legend_avg_yes),
@@ -396,6 +438,23 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
                 for i, v in enumerate(filtered_df[metric]):
                     ax.text(v + 1, i + bar_shift, f"{v:.0f}%" if metric != "index" else f"{v:.0f}", va="center", fontsize=9)
                 bar_shift += bar_width
+        
+        # Custom indexes
+        if custom_index_displays:
+            for col, display in custom_index_displays.items():
+                if display and col in filtered_df.columns:
+                    color = custom_index_colors.get(col, "#FF6B6B")
+                    label = custom_index_legends.get(col, col.replace('index (', '').replace(')', ''))
+                    ax.barh(
+                        [pos + bar_shift for pos in x_pos],
+                        filtered_df[col],
+                        height=bar_width,
+                        label=label,
+                        color=color,
+                    )
+                    for i, v in enumerate(filtered_df[col]):
+                        ax.text(v + 1, i + bar_shift, f"{v:.0f}", va="center", fontsize=9)
+                    bar_shift += bar_width
 
         ax.set_xlabel(" ")
         ax.set_title(chart_title, fontweight='bold')
@@ -1856,11 +1915,25 @@ def main():
 
             st.subheader("Bar Chart Visualization")
 
-
-            
+            ###
             display_avg_yes = st.checkbox("Display Total Sample Percentages", value=False)
             display_cut_percentage = st.checkbox("Display Data Cut Percentages", value=True)
             display_index = st.checkbox("Display Index", value=False)
+            
+            # Create individual checkboxes for each custom index
+            custom_index_cols = [col for col in df.columns if col.startswith('index (')]
+            custom_index_displays = {}
+            custom_index_colors = {}
+            
+            if custom_index_cols:
+                st.write("Custom Index Options:")
+                for col in custom_index_cols:
+                    col_name = col.replace('index (', '').replace(')', '')
+                    display_key = f"display_{col_name.replace(' ', '_').replace('-', '_')}"
+                    color_key = f"color_{col_name.replace(' ', '_').replace('-', '_')}"
+                    
+                    custom_index_displays[col] = st.checkbox(f"Display {col_name}", value=False, key=display_key)
+                    custom_index_colors[col] = st.color_picker(f"Color for {col_name}", "#FF6B6B", key=color_key)
 
             bar_color_cut = st.color_picker("Pick a Bar Color for Data Cut Percentages", "#0F0FE4")
             bar_color_yes = st.color_picker("Pick a Bar Color for Total Sample Percentages", "#B50C0C")
@@ -1883,6 +1956,8 @@ def main():
                     bar_color_yes,
                     bar_color_index,
                     orientation,
+                    custom_index_displays=custom_index_displays,
+                    custom_index_colors=custom_index_colors,
                     chart_key_suffix="main"
                 )
             else:
