@@ -1424,6 +1424,21 @@ def main():
                 display_avg_yes = st.checkbox("Display Total Sample Percentages", value=False, key=f"backend_avg_yes_{question_code}")
                 display_cut_percentage = st.checkbox("Display Data Cut Percentages", value=True, key=f"backend_cut_{question_code}")
                 display_index = st.checkbox("Display Index", value=False, key=f"backend_index_{question_code}")
+                
+                # Create individual checkboxes for each custom index
+                custom_index_cols = [col for col in df.columns if col.startswith('index (')]
+                custom_index_displays = {}
+                custom_index_colors = {}
+                
+                if custom_index_cols:
+                    st.write("Custom Index Options:")
+                    for col in custom_index_cols:
+                        col_name = col.replace('index (', '').replace(')', '')
+                        display_key = f"backend_display_{col_name.replace(' ', '_').replace('-', '_')}_{question_code}"
+                        color_key = f"backend_color_{col_name.replace(' ', '_').replace('-', '_')}_{question_code}"
+                        
+                        custom_index_displays[col] = st.checkbox(f"Display {col_name}", value=False, key=display_key)
+                        custom_index_colors[col] = st.color_picker(f"Color for {col_name}", "#FF6B6B", key=color_key)
 
                 bar_color_cut = st.color_picker("Pick a Bar Color for Data Cut Percentages", "#0F0FE4", key=f"backend_color_cut_{question_code}")
                 bar_color_yes = st.color_picker("Pick a Bar Color for Total Sample Percentages", "#B50C0C", key=f"backend_color_yes_{question_code}")
@@ -1448,6 +1463,8 @@ def main():
                         bar_color_yes,
                         bar_color_index,
                         orientation,
+                        custom_index_displays=custom_index_displays,
+                        custom_index_colors=custom_index_colors,
                         chart_key_suffix=f"backend_{question_code}"
                     )
                 else:
