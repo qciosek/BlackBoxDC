@@ -401,7 +401,7 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
         if custom_index_displays:
             for col, display in custom_index_displays.items():
                 if display and col in filtered_df.columns:
-                    color = custom_index_colors.get(col, "#FF6B6B")
+                    color = custom_index_colors.get(col, "#FFB738")
                     label = custom_index_legends.get(col, col.replace('index (', '').replace(')', ''))
                     ax.bar(
                         [pos + bar_shift for pos in x_pos],
@@ -443,7 +443,7 @@ def plot_bar_chart_with_editable_labels(filtered_df, display_cut_percentage, dis
         if custom_index_displays:
             for col, display in custom_index_displays.items():
                 if display and col in filtered_df.columns:
-                    color = custom_index_colors.get(col, "#FF6B6B")
+                    color = custom_index_colors.get(col, "#FFB728")
                     label = custom_index_legends.get(col, col.replace('index (', '').replace(')', ''))
                     ax.barh(
                         [pos + bar_shift for pos in x_pos],
