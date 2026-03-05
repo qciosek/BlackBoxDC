@@ -1437,8 +1437,8 @@ def main():
                         display_key = f"backend_display_{col_name.replace(' ', '_').replace('-', '_')}_{question_code}"
                         color_key = f"backend_color_{col_name.replace(' ', '_').replace('-', '_')}_{question_code}"
                         
-                        custom_index_displays[col] = st.checkbox(f"Display {col_name}", value=False, key=display_key)
-                        custom_index_colors[col] = st.color_picker(f"Color for {col_name}", "#FF6B6B", key=color_key)
+                        custom_index_displays[col] = st.checkbox(f"Display {col_name} Index", value=False, key=display_key)
+                        custom_index_colors[col] = st.color_picker(f"Pick a bar color for {col_name} Index", "#FFB728", key=color_key)
 
                 bar_color_cut = st.color_picker("Pick a Bar Color for Data Cut Percentages", "#0F0FE4", key=f"backend_color_cut_{question_code}")
                 bar_color_yes = st.color_picker("Pick a Bar Color for Total Sample Percentages", "#B50C0C", key=f"backend_color_yes_{question_code}")
