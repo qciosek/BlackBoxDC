@@ -554,8 +554,8 @@ def main():
     el_question_codes_query = f"""
     SELECT DISTINCT fr.question_code, fr.answer_text
     FROM {FE_responses_table} fr
-    JOIN {question_mapping_table} qm ON fr.question_code = qm.question_code
-    ORDER BY qm.question_order, fr.answer_text
+    LEFT JOIN {question_mapping_table} qm ON fr.question_code = qm.question_code
+    ORDER BY COALESCE(qm.question_order, 9999), fr.answer_text
     """
     el_question_codes_df = pd.read_sql(el_question_codes_query, connection)
 
