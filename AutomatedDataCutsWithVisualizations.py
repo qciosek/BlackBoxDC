@@ -201,7 +201,7 @@ with st.expander("🎯 View Front End (All Front End Answers)"):
                NULL AS q_question_code, NULL AS s_question_text
         FROM {FE_EL_mapping_table}
         WHERE el_code IS NOT NULL AND el_text IS NOT NULL
-        ORDER BY el_code, el_text
+        ORDER BY el_order
         """
         fe_df = pd.read_sql(query, connection)
         return fe_df
@@ -240,20 +240,13 @@ with st.expander("🎯 View Front End (All Front End Answers)"):
             
             st.markdown(f"### Top 10 Back End Answers for: {selected_question_code} - {selected_row['answer_text']}")
             
-            # Function to fetch top 10 back end answers by cut percentage
+            # Function to fetch top 10 back end answers by EL value
             def fetch_top_back_end_answers(el_code):
                 query = f"""
-                SELECT 
-                    qm.question_code,
-                    qm.answer_text,
-                    qm.question_text,
-                    ROUND(COUNT(CASE WHEN LOWER(r.response_text) = 'yes' THEN 1 END) * 100.0 / 
-                          COUNT(CASE WHEN LOWER(r.response_text) IN ('yes', 'no') THEN 1 END)) AS cutpercentage
-                FROM {responses_table} r
-                JOIN {question_mapping_table} qm ON r.question_code = qm.question_code
-                GROUP BY qm.question_code, qm.answer_text, qm.question_text
-                HAVING cutpercentage > 0
-                ORDER BY cutpercentage DESC
+                SELECT question_code, answer_text, {el_code} AS el_value
+                FROM {FE_responses_table}
+                WHERE {el_code} IS NOT NULL
+                ORDER BY {el_code} DESC
                 LIMIT 10
                 """
                 top_be_df = pd.read_sql(query, connection)
@@ -263,16 +256,63 @@ with st.expander("🎯 View Front End (All Front End Answers)"):
             top_be_answers = fetch_top_back_end_answers(selected_question_code)
             
             if not top_be_answers.empty:
-                st.dataframe(
-                    top_be_answers[['question_code', 'answer_text', 'question_text', 'cutpercentage']],
-                    use_container_width=True,
-                    column_config={
-                        "question_code": st.column_config.TextColumn("Question Code", width="small"),
-                        "answer_text": st.column_config.TextColumn("Answer Text", width="medium"),
-                        "question_text": st.column_config.TextColumn("Question Text", width="large"),
-                        "cutpercentage": st.column_config.ProgressColumn("Cut %", format="%.1f%%", min_value=0, max_value=100)
-                    }
-                )
+                # Reset index to start from 1
+                display_df = top_be_answers.reset_index(drop=True)
+                display_df.index = display_df.index + 1
+                
+                # Apply color coding based on EL values
+                def get_el_color(value):
+                    if value < 0:
+                        return "cell-red"
+                    elif 1 <= value <= 3:
+                        return "cell-yellow"
+                    elif value > 3:
+                        return "cell-green"
+                    else:
+                        return "cell-gray"
+                
+                # Create styled HTML table
+                html_table = """
+                <style>
+                .el-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin: 10px 0;
+                    font-size: 14px;
+                }
+                .el-table th, .el-table td {
+                    border: 1px solid #ddd;
+                    padding: 8px;
+                    text-align: left;
+                }
+                .el-table th {
+                    background-color: transparent;
+                    font-weight: bold;
+                }
+                .el-table td:first-child {
+                    text-align: center;
+                    font-weight: bold;
+                }
+                .cell-red { background-color: #DA261F; color: white; font-weight: bold; }
+                .cell-yellow { background-color: #DAC41F; color: black; font-weight: bold; }
+                .cell-green { background-color: #1FDA2C; color: black; font-weight: bold; }
+                .cell-gray { background-color: #BDBDBD; color: black; font-weight: bold; }
+                </style>
+                <table class="el-table">
+                    <tr>
+                        <th>Rank</th>
+                        <th>Question Code</th>
+                        <th>Answer Text</th>
+                        <th>EL Value</th>
+                    </tr>
+                """
+                
+                for idx, (_, row) in enumerate(display_df.iterrows(), 1):
+                    color_class = get_el_color(row['el_value'])
+                    html_table += f"<tr><td>{idx}</td><td>{row['question_code']}</td><td>{row['answer_text']}</td><td class=\"{color_class}\">{row['el_value']:.1f}</td></tr>"
+                
+                html_table += "</table>"
+                st.markdown(html_table, unsafe_allow_html=True)
             else:
                 st.info("No back end answers found for this selection.")
     else:
