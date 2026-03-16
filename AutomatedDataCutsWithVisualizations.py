@@ -192,6 +192,92 @@ with st.expander("📊 View Full Study (All Questions & Answers)"):
     
     st.dataframe(study_df, use_container_width=True)
 
+# New View Front End Section
+with st.expander("🎯 View Front End (All Front End Answers)"):
+    # Function to fetch all front end answers
+    def fetch_front_end_answers():
+        query = f"""
+        SELECT el_code AS question_code, el_text AS answer_text, el_question AS question_text, 
+               NULL AS q_question_code, NULL AS s_question_text
+        FROM {FE_EL_mapping_table}
+        WHERE el_code IS NOT NULL AND el_text IS NOT NULL
+        ORDER BY el_code, el_text
+        """
+        fe_df = pd.read_sql(query, connection)
+        return fe_df
+    
+    # Fetch and display front end answers
+    fe_answers_df = fetch_front_end_answers()
+    
+    if not fe_answers_df.empty:
+        st.markdown("### Front End Answers Table")
+        st.markdown("Click on any row to see the top 10 back end answers by cut percentage")
+        
+        # Add a selection column for interactivity
+        fe_answers_display = fe_answers_df.copy()
+        fe_answers_display['Select'] = False
+        
+        # Create an editable dataframe for row selection
+        edited_df = st.data_editor(
+            fe_answers_display[['question_code', 'answer_text', 'question_text', 'Select']],
+            use_container_width=True,
+            hide_index=True,
+            column_config={
+                "question_code": st.column_config.TextColumn("EL Code", width="small"),
+                "answer_text": st.column_config.TextColumn("EL Text", width="medium"),
+                "question_text": st.column_config.TextColumn("EL Question", width="large"),
+                "Select": st.column_config.CheckboxColumn("Select Row", width="small")
+            }
+        )
+        
+        # Check if any row is selected
+        selected_rows = edited_df[edited_df['Select'] == True]
+        
+        if not selected_rows.empty:
+            # Get the first selected row
+            selected_row = selected_rows.iloc[0]
+            selected_question_code = selected_row['question_code']
+            
+            st.markdown(f"### Top 10 Back End Answers for: {selected_question_code} - {selected_row['answer_text']}")
+            
+            # Function to fetch top 10 back end answers by cut percentage
+            def fetch_top_back_end_answers(el_code):
+                query = f"""
+                SELECT 
+                    qm.question_code,
+                    qm.answer_text,
+                    qm.question_text,
+                    ROUND(COUNT(CASE WHEN LOWER(r.response_text) = 'yes' THEN 1 END) * 100.0 / 
+                          COUNT(CASE WHEN LOWER(r.response_text) IN ('yes', 'no') THEN 1 END)) AS cutpercentage
+                FROM {responses_table} r
+                JOIN {question_mapping_table} qm ON r.question_code = qm.question_code
+                GROUP BY qm.question_code, qm.answer_text, qm.question_text
+                HAVING cutpercentage > 0
+                ORDER BY cutpercentage DESC
+                LIMIT 10
+                """
+                top_be_df = pd.read_sql(query, connection)
+                return top_be_df
+            
+            # Fetch and display top 10 back end answers
+            top_be_answers = fetch_top_back_end_answers(selected_question_code)
+            
+            if not top_be_answers.empty:
+                st.dataframe(
+                    top_be_answers[['question_code', 'answer_text', 'question_text', 'cutpercentage']],
+                    use_container_width=True,
+                    column_config={
+                        "question_code": st.column_config.TextColumn("Question Code", width="small"),
+                        "answer_text": st.column_config.TextColumn("Answer Text", width="medium"),
+                        "question_text": st.column_config.TextColumn("Question Text", width="large"),
+                        "cutpercentage": st.column_config.ProgressColumn("Cut %", format="%.1f%%", min_value=0, max_value=100)
+                    }
+                )
+            else:
+                st.info("No back end answers found for this selection.")
+    else:
+        st.warning("No front end answers found in the selected dataset.")
+
 # Clear Streamlit cache
 st.cache_data.clear()
 
