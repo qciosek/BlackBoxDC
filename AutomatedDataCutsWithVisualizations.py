@@ -238,27 +238,43 @@ with st.expander("🎯 View Front End (All Front End Answers)"):
             selected_row = selected_rows.iloc[0]
             selected_question_code = selected_row['question_code']
             
-            st.markdown(f"### Top 10 Back End Answers for: {selected_question_code} - {selected_row['answer_text']}")
+            st.markdown(f"### Top 50 Back End Answers for: {selected_question_code} - {selected_row['answer_text']}")
             
-            # Function to fetch top 10 back end answers by EL value
+            # Function to fetch top 50 back end answers by EL value
             def fetch_top_back_end_answers(el_code):
                 query = f"""
                 SELECT question_code, answer_text, {el_code} AS el_value
                 FROM {FE_responses_table}
                 WHERE {el_code} IS NOT NULL
-                ORDER BY {el_order} DESC
-                LIMIT 10
+                ORDER BY el_value DESC
+                LIMIT 50
                 """
                 top_be_df = pd.read_sql(query, connection)
                 return top_be_df
             
-            # Fetch and display top 10 back end answers
+            # Fetch and display top 50 back end answers
             top_be_answers = fetch_top_back_end_answers(selected_question_code)
             
             if not top_be_answers.empty:
                 # Reset index to start from 1
                 display_df = top_be_answers.reset_index(drop=True)
                 display_df.index = display_df.index + 1
+                
+                # Split into first 10 and remaining
+                first_10_df = display_df.head(10)
+                remaining_df = display_df.iloc[10:]
+                
+                # Create expand button if there are more than 10 answers
+                if len(display_df) > 10:
+                    expand_all = st.button(f"Show All {len(display_df)} Answers", key="expand_answers")
+                else:
+                    expand_all = True
+                
+                # Determine which dataframe to display
+                if expand_all:
+                    display_to_show = display_df
+                else:
+                    display_to_show = first_10_df
                 
                 # Apply color coding based on EL values
                 def get_el_color(value):
@@ -307,7 +323,7 @@ with st.expander("🎯 View Front End (All Front End Answers)"):
                     </tr>
                 """
                 
-                for idx, (_, row) in enumerate(display_df.iterrows(), 1):
+                for idx, (_, row) in enumerate(display_to_show.iterrows(), 1):
                     color_class = get_el_color(row['el_value'])
                     html_table += f"<tr><td>{idx}</td><td>{row['question_code']}</td><td>{row['answer_text']}</td><td class=\"{color_class}\">{row['el_value']:.1f}</td></tr>"
                 
