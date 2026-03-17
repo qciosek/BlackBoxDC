@@ -246,7 +246,7 @@ with st.expander("🎯 View Front End (All Front End Answers)"):
                 SELECT question_code, answer_text, {el_code} AS el_value
                 FROM {FE_responses_table}
                 WHERE {el_code} IS NOT NULL
-                ORDER BY {el_code} DESC
+                ORDER BY {el_order} DESC
                 LIMIT 10
                 """
                 top_be_df = pd.read_sql(query, connection)
